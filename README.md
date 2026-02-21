@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🍚 chawan — **C**ompact **H**ub for **A**ll tmux session, **W**indow, **A**nd pane **N**avigation
+# 🍚 chawan
 
 **Manage tmux sessions, windows, and panes in a single popup**
 
@@ -13,20 +13,20 @@
 
 ## Features
 
-No menus, no multi-step workflows — one fzf popup with tab-based mode switching.
+One fzf popup with tab-based mode switching. No menus, no extra steps.
 
 - **One popup, three modes** — switch between Session / Window / Pane with `Tab`
-- **Fuzzy search** — find any tmux resource instantly
+- **Fuzzy search** — find any session, window, or pane instantly
 - **Live preview** — see pane contents before switching
 - **Full lifecycle** — create, rename, delete, and switch in one place
-- **Safety guards** — prevents deleting the current session or the last window/pane
+- **Safe deletion** — deleting the current session automatically switches to another before removing it
 
 <!-- TODO: Replace with actual GIF recording -->
 <!-- ![demo](https://github.com/wasabi0522/chawan/assets/demo.gif) -->
 
 ```
 ╭───────────────────────── chawan ─────────────────────────╮
-│  Session   Window   Pane            Tab/S-Tab: switch    │
+│  Session   Window   Pane   Tab/Shift-Tab: switch mode    │
 ├────────────────────────────┬── Preview: my-project ──────┤
 │  Session> _          3/3   │ $ vim src/main.rs           │
 │ ▍* my-project       3w     │ ~                           │
@@ -81,13 +81,13 @@ Press `prefix + S` to open chawan.
 
 | Key | Action |
 |-----|--------|
-| `Tab` / `Shift-Tab` | Switch mode (Session → Window → Pane) |
+| `Tab` / `Shift-Tab` | Cycle mode (Session → Window → Pane → Session) |
 | `Enter` | Switch to selected target |
 | `Ctrl-o` | Create new session / window / pane |
 | `Ctrl-d` | Delete selected target |
 | `Ctrl-r` | Rename selected target |
 | `Esc` | Close popup |
-| Click header tab | Switch mode by mouse |
+| Click header tab | Switch mode by clicking a tab label in the header |
 
 ## Configuration
 

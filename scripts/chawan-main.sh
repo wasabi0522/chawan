@@ -93,12 +93,12 @@ compute_header_width() {
 build_headers() {
   local header_width="$1"
   local dim=$'\e[2m' rs_ansi=$'\e[0m'
-  local hint="${dim}Tab/S-Tab: switch${rs_ansi}"
+  local hint="${dim}Tab/S-Tab: switch mode${rs_ansi}"
 
   # Visible character widths (excluding ANSI escape sequences):
   #   make_tab_bar output: defined by TAB_BAR_VISIBLE_LEN in helpers.sh
-  #   hint text: "Tab/S-Tab: switch" = 17 chars
-  local tab_visible_len=$TAB_BAR_VISIBLE_LEN hint_visible_len=17
+  #   hint text: "Tab/S-Tab: switch mode" = 22 chars
+  local tab_visible_len=$TAB_BAR_VISIBLE_LEN hint_visible_len=22
   local gap=$((header_width - tab_visible_len - hint_visible_len))
   ((gap < 2)) && gap=2
 

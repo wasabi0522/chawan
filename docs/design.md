@@ -74,7 +74,7 @@ fzfの`reload()`アクションでリスト内容を動的に差し替える。
 [prefix + S] -> popup起動 (デフォルト: Sessionモード)
 
 ╭─────────────────────── chawan ─────────────────────────╮
-│  Session   Window   Pane          Tab/S-Tab: switch   │  <- header
+│  Session   Window   Pane     Tab/S-Tab: switch mode   │  <- header
 ├──────────────────────────┬── Preview: my-project ─────┤
 │  Session> _        3/3   │ $ vim src/main.rs          │
 │ ▍* my-project    3w     │ ~                          │
@@ -94,7 +94,7 @@ fzfの`reload()`アクションでリスト内容を動的に差し替える。
 Tab -> Windowタブに切替:
 
 ╭─────────────────────── chawan ─────────────────────────╮
-│   Session   Window   Pane          Tab/S-Tab: switch  │
+│   Session   Window   Pane     Tab/S-Tab: switch mode  │
 ├──────────────────────────┬── Preview: my-project:0 ───┤
 │  Window> _         5/5   │ $ vim src/main.rs          │
 │ ▍* my-project:0  vim    │ ~                          │

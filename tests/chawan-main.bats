@@ -167,7 +167,7 @@ teardown() {
   build_headers 80
   [[ -n "$HEADER_SESSION" ]]
   [[ "$HEADER_SESSION" == *"Session"* ]]
-  [[ "$HEADER_SESSION" == *"Tab/S-Tab: switch"* ]]
+  [[ "$HEADER_SESSION" == *"Tab/S-Tab: switch mode"* ]]
   [[ -n "$HEADER_WINDOW" ]]
   [[ "$HEADER_WINDOW" == *"Window"* ]]
   [[ -n "$HEADER_PANE" ]]
