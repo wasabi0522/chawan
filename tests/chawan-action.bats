@@ -121,20 +121,90 @@ teardown() {
   [ "${lines[1]}" = "kill-session -t =-my-session" ]
 }
 
-# --- delete session: safety guard ---
+# --- delete current session: switch-client then kill ---
 
-@test "chawan-action: delete current session is skipped (safety guard)" {
+@test "chawan-action: delete current session switches client then kills" {
   MOCK_DISPLAY_MESSAGE="my-project"
   export MOCK_DISPLAY_MESSAGE
+
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      display-message)
+        echo "$MOCK_DISPLAY_MESSAGE"
+        ;;
+      list-sessions)
+        printf 'my-project:\nother-session:\n'
+        ;;
+    esac
+  }
+  export -f tmux
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete session "my-project"
   [ "$status" -eq 0 ]
 
   run cat "$MOCK_TMUX_CALLS"
-  # Should have display-message call to get current session
   [ "${lines[0]}" = "display-message -p #S" ]
-  # Should have display-message call for warning (not kill-session)
-  [[ "${lines[1]}" == display-message* ]]
+  [ "${lines[1]}" = "list-sessions" ]
+  [ "${lines[2]}" = "switch-client -l" ]
+  [ "${lines[3]}" = "kill-session -t =my-project" ]
+}
+
+@test "chawan-action: delete current session falls back to switch-client -n" {
+  MOCK_DISPLAY_MESSAGE="my-project"
+  export MOCK_DISPLAY_MESSAGE
+
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      display-message)
+        echo "$MOCK_DISPLAY_MESSAGE"
+        ;;
+      list-sessions)
+        printf 'my-project:\nother-session:\n'
+        ;;
+      switch-client)
+        if [[ "$2" == "-l" ]]; then
+          return 1
+        fi
+        ;;
+    esac
+  }
+  export -f tmux
+
+  run "$PROJECT_ROOT/scripts/chawan-action.sh" delete session "my-project"
+  [ "$status" -eq 0 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [ "${lines[0]}" = "display-message -p #S" ]
+  [ "${lines[1]}" = "list-sessions" ]
+  [ "${lines[2]}" = "switch-client -l" ]
+  [ "${lines[3]}" = "switch-client -n" ]
+  [ "${lines[4]}" = "kill-session -t =my-project" ]
+}
+
+# --- delete last session: safety guard ---
+
+@test "chawan-action: delete last session is blocked (safety guard)" {
+  MOCK_DISPLAY_MESSAGE="my-project"
+  export MOCK_DISPLAY_MESSAGE
+
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      display-message)
+        echo "$MOCK_DISPLAY_MESSAGE"
+        ;;
+      list-sessions)
+        printf 'my-project:\n'
+        ;;
+    esac
+  }
+  export -f tmux
+
+  run "$PROJECT_ROOT/scripts/chawan-action.sh" delete session "my-project"
+  [ "$status" -eq 0 ]
+
   # Should NOT contain kill-session
   run grep "kill-session" "$MOCK_TMUX_CALLS"
   [ "$status" -eq 1 ]

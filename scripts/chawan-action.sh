@@ -36,8 +36,13 @@ main() {
           local current_session
           current_session=$(tmux display-message -p '#S')
           if [[ "$target" == "$current_session" ]]; then
-            display_message "Cannot delete current session: $target"
-            return 0
+            local session_count
+            session_count=$(tmux list-sessions 2>/dev/null | wc -l)
+            if ((session_count <= 1)); then
+              display_message "Cannot delete last session: $target"
+              return 0
+            fi
+            tmux switch-client -l 2>/dev/null || tmux switch-client -n 2>/dev/null
           fi
           tmux kill-session -t "=$target" 2>/dev/null || true
           ;;
