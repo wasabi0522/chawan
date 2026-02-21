@@ -443,6 +443,18 @@ EOF
 
 # --- Unknown mode ---
 
+@test "chawan-list session: handles space in session name" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+my project	0	2	1000
+EOF
+
+  run "$CHAWAN_LIST" session
+  [ "$status" -eq 0 ]
+  local id
+  id="$(echo "${lines[1]}" | cut -f1)"
+  [ "$id" = "my project" ]
+}
+
 @test "chawan-list unknown mode: returns empty output with exit 0" {
   run "$CHAWAN_LIST" unknown
   [ "$status" -eq 0 ]

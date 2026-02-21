@@ -187,6 +187,42 @@ teardown() {
 
 # --- session mode: new-session failure ---
 
+@test "chawan-create: window mode shows error when new-window fails" {
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      new-window) return 1 ;;
+    esac
+  }
+  export -f tmux
+
+  local exit_status=0
+  "$CREATE_SCRIPT" window "my-project:2" 2>/dev/null || exit_status=$?
+  [ "$exit_status" -eq 1 ]
+
+  # Should have called new-window but no further commands
+  run grep "new-window" "$MOCK_TMUX_CALLS"
+  [ "$status" -eq 0 ]
+}
+
+@test "chawan-create: pane mode shows error when split-window fails" {
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      split-window) return 1 ;;
+    esac
+  }
+  export -f tmux
+
+  local exit_status=0
+  "$CREATE_SCRIPT" pane "my-project:2.1" 2>/dev/null || exit_status=$?
+  [ "$exit_status" -eq 1 ]
+
+  # Should have called split-window but no further commands
+  run grep "split-window" "$MOCK_TMUX_CALLS"
+  [ "$status" -eq 0 ]
+}
+
 @test "chawan-create: session mode rejects name with control characters" {
   local exit_status=0
   printf 'my\tproject' | "$CREATE_SCRIPT" session 2>/dev/null || exit_status=$?

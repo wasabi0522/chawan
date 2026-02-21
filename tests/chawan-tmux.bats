@@ -6,10 +6,11 @@ setup() {
   setup_mocks
   mock_fzf_available
 
-  # Mock tmux: record calls and handle show-option
+  # Mock tmux: record calls and handle show-option and -V
   tmux() {
     echo "$@" >>"$MOCK_TMUX_CALLS"
     case "$1" in
+      -V) echo "tmux 3.4" ;;
       show-option)
         # Default: return empty (use default values)
         echo ""
@@ -23,6 +24,26 @@ setup() {
 
 teardown() {
   teardown_mocks
+}
+
+# --- tmux version too old ---
+
+@test "chawan.tmux: error when tmux version is too old (3.2)" {
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      -V) echo "tmux 3.2" ;;
+      show-option) echo "" ;;
+    esac
+  }
+  export -f tmux
+
+  run "$CHAWAN_TMUX"
+  [ "$status" -eq 1 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [[ "$output" == *"display-message"* ]]
+  [[ "$output" == *"3.3"* ]]
 }
 
 # --- fzf not installed ---
@@ -89,6 +110,7 @@ teardown() {
   tmux() {
     echo "$@" >>"$MOCK_TMUX_CALLS"
     case "$1" in
+      -V) echo "tmux 3.4" ;;
       show-option)
         if [[ "$3" == "@chawan-key" ]]; then
           echo '!@#'
@@ -112,6 +134,7 @@ teardown() {
   tmux() {
     echo "$@" >>"$MOCK_TMUX_CALLS"
     case "$1" in
+      -V) echo "tmux 3.4" ;;
       show-option)
         if [[ "$3" == "@chawan-key" ]]; then
           echo "F"
@@ -136,6 +159,7 @@ teardown() {
   tmux() {
     echo "$@" >>"$MOCK_TMUX_CALLS"
     case "$1" in
+      -V) echo "tmux 3.4" ;;
       show-option)
         if [[ "$3" == "@chawan-key-window" ]]; then
           echo "W"
@@ -159,6 +183,7 @@ teardown() {
   tmux() {
     echo "$@" >>"$MOCK_TMUX_CALLS"
     case "$1" in
+      -V) echo "tmux 3.4" ;;
       show-option)
         if [[ "$3" == "@chawan-key-pane" ]]; then
           echo "P"
@@ -193,6 +218,7 @@ teardown() {
   tmux() {
     echo "$@" >>"$MOCK_TMUX_CALLS"
     case "$1" in
+      -V) echo "tmux 3.4" ;;
       show-option)
         if [[ "$3" == "@chawan-key-window" ]]; then
           echo '!@#'

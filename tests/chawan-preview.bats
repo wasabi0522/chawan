@@ -45,6 +45,14 @@ teardown() {
 
 # --- empty target safety guard ---
 
+@test "chawan-preview.sh: session target with space calls capture-pane correctly" {
+  run "$PREVIEW_SCRIPT" "my project"
+  [ "$status" -eq 0 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [ "$output" = "capture-pane -ep -t =my project:" ]
+}
+
 @test "chawan-preview.sh: empty target exits 0 without calling tmux" {
   run "$PREVIEW_SCRIPT" ""
   [ "$status" -eq 0 ]

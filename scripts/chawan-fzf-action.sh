@@ -43,19 +43,16 @@ switch_to_mode() {
 main() {
   local action="${1:-}"
   local arg="${2:-}"
-  local escaped_arg
+  local escaped_arg mode
   printf -v escaped_arg '%q' "$arg"
+  mode=$(mode_from_id "$arg")
 
   case "$action" in
     tab)
-      local current
-      current=$(mode_from_id "$arg")
-      switch_to_mode "$(next_mode "$current")"
+      switch_to_mode "$(next_mode "$mode")"
       ;;
     shift-tab)
-      local current
-      current=$(mode_from_id "$arg")
-      switch_to_mode "$(prev_mode "$current")"
+      switch_to_mode "$(prev_mode "$mode")"
       ;;
     click-header)
       case "$arg" in
@@ -65,13 +62,9 @@ main() {
       esac
       ;;
     delete)
-      local mode
-      mode=$(mode_from_id "$arg")
       echo "reload-sync($ESCAPED_SCRIPTS_DIR/chawan-action.sh delete $mode $escaped_arg >/dev/null 2>&1; $ESCAPED_SCRIPTS_DIR/chawan-list.sh $mode)"
       ;;
     new)
-      local mode
-      mode=$(mode_from_id "$arg")
       if [[ "$mode" == "session" ]]; then
         echo "execute($ESCAPED_SCRIPTS_DIR/chawan-create.sh session)+abort"
       else
@@ -79,8 +72,6 @@ main() {
       fi
       ;;
     rename)
-      local mode
-      mode=$(mode_from_id "$arg")
       echo "execute($ESCAPED_SCRIPTS_DIR/chawan-rename.sh $mode $escaped_arg)+reload($ESCAPED_SCRIPTS_DIR/chawan-list.sh $mode)"
       ;;
   esac

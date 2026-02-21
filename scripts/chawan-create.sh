@@ -38,13 +38,19 @@ main() {
       [[ -z "$target" ]] && return 0
 
       local session="${target%%:*}"
-      tmux new-window -t "=${session}:"
+      if ! tmux new-window -t "=${session}:"; then
+        echo "Error: failed to create window" >&2
+        return 1
+      fi
       ;;
     pane)
       # Empty target: exit immediately
       [[ -z "$target" ]] && return 0
 
-      tmux split-window -h -t "=$target"
+      if ! tmux split-window -h -t "=$target"; then
+        echo "Error: failed to split pane" >&2
+        return 1
+      fi
       ;;
   esac
 }

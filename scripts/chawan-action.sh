@@ -25,8 +25,7 @@ main() {
           ;;
         pane)
           local session="${target%%:*}"
-          local window="${target%.*}"
-          tmux switch-client -t "=$session" && tmux select-window -t "=$window" && tmux select-pane -t "=$target"
+          tmux switch-client -t "=$session" && tmux select-pane -t "=$target"
           ;;
       esac
       ;;

@@ -8,7 +8,7 @@
 _apply_sort() {
   case "${CHAWAN_SORT:-default}" in
     mru) sort -t$'\t' -k4,4rn | cut -f1,2 ;;
-    name) sort -t$'\t' -k3,3 | cut -f1,2 ;;
+    name) LC_ALL=C sort -t$'\t' -k3,3 | cut -f1,2 ;;
     *) cut -f1,2 ;;
   esac
 }

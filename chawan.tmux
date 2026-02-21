@@ -6,6 +6,13 @@ CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$CURRENT_DIR/scripts/helpers.sh"
 
 main() {
+  local tmux_version
+  tmux_version=$(tmux -V | grep -oE '[0-9]+\.[0-9]+' | head -1)
+  if ! version_ge "$tmux_version" "3.3"; then
+    display_message "chawan: tmux 3.3+ is required (found $tmux_version)"
+    return 1
+  fi
+
   if ! command -v fzf >/dev/null 2>&1; then
     display_message "chawan: fzf is not installed"
     return 1

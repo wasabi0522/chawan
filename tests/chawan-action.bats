@@ -72,15 +72,14 @@ teardown() {
 
 # --- switch pane ---
 
-@test "chawan-action: switch pane calls switch-client, select-window, and select-pane" {
+@test "chawan-action: switch pane calls switch-client and select-pane" {
   run "$PROJECT_ROOT/scripts/chawan-action.sh" switch pane "my-project:2.1"
   [ "$status" -eq 0 ]
 
   run cat "$MOCK_TMUX_CALLS"
   [ "${lines[0]}" = "switch-client -t =my-project" ]
-  [ "${lines[1]}" = "select-window -t =my-project:2" ]
-  [ "${lines[2]}" = "select-pane -t =my-project:2.1" ]
-  [ "${#lines[@]}" -eq 3 ]
+  [ "${lines[1]}" = "select-pane -t =my-project:2.1" ]
+  [ "${#lines[@]}" -eq 2 ]
 }
 
 @test "chawan-action: switch pane with slash in session name" {
@@ -89,8 +88,8 @@ teardown() {
 
   run cat "$MOCK_TMUX_CALLS"
   [ "${lines[0]}" = "switch-client -t =org/project" ]
-  [ "${lines[1]}" = "select-window -t =org/project:0" ]
-  [ "${lines[2]}" = "select-pane -t =org/project:0.2" ]
+  [ "${lines[1]}" = "select-pane -t =org/project:0.2" ]
+  [ "${#lines[@]}" -eq 2 ]
 }
 
 @test "chawan-action: switch pane with dot in session name" {
@@ -99,9 +98,8 @@ teardown() {
 
   run cat "$MOCK_TMUX_CALLS"
   [ "${lines[0]}" = "switch-client -t =my.dotfiles" ]
-  [ "${lines[1]}" = "select-window -t =my.dotfiles:0" ]
-  [ "${lines[2]}" = "select-pane -t =my.dotfiles:0.1" ]
-  [ "${#lines[@]}" -eq 3 ]
+  [ "${lines[1]}" = "select-pane -t =my.dotfiles:0.1" ]
+  [ "${#lines[@]}" -eq 2 ]
 }
 
 # --- delete session ---
@@ -291,6 +289,25 @@ teardown() {
   export -f tmux
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete window "no-such:0"
+  [ "$status" -eq 0 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [[ "$output" == *"display-message chawan:"* ]]
+}
+
+@test "chawan-action: delete pane shows error when kill-pane fails" {
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      kill-pane)
+        echo "pane not found" >&2
+        return 1
+        ;;
+    esac
+  }
+  export -f tmux
+
+  run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my-project:0.1"
   [ "$status" -eq 0 ]
 
   run cat "$MOCK_TMUX_CALLS"

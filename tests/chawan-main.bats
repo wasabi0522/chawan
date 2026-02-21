@@ -599,6 +599,18 @@ _mock_fzf() {
   [ "$status" -eq 0 ]
 }
 
+@test "compute_header_width: custom preview percentage (30%)" {
+  tmux() {
+    if [[ "$1" == "display-message" ]]; then echo "200"; fi
+  }
+  export -f tmux
+
+  run compute_header_width "80%" "on" "right,30%"
+  [ "$status" -eq 0 ]
+  # 200 * 80/100 = 160 cols, 160 * 70/100 - 10 = 102
+  [ "$output" = "102" ]
+}
+
 @test "main: fzf unexpected exit code is propagated" {
   _mock_tmux_default
   fzf() {
