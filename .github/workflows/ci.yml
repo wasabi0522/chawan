@@ -1,0 +1,75 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    env:
+      SHELLCHECK_VERSION: "0.10.0"
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: mfinelli/setup-shfmt@a25fda4c1fe115aec0f85e04126610841bc3141d # v4.0.1
+      - name: Install ShellCheck
+        run: |
+          curl -sSL "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" | tar -xJ
+          sudo cp "shellcheck-v${SHELLCHECK_VERSION}/shellcheck" /usr/local/bin/
+      - name: Lint
+        run: make lint
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: bats-core/bats-action@77d6fb60505b4d0d1d73e48bd035b55074bbfb43 # 4.0.0
+        with:
+          support-install: false
+          assert-install: false
+          detik-install: false
+          file-install: false
+      - name: Run tests
+        run: make test
+  coverage:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      GEM_HOME: ~/gems
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: bats-core/bats-action@77d6fb60505b4d0d1d73e48bd035b55074bbfb43 # 4.0.0
+        with:
+          support-install: false
+          assert-install: false
+          detik-install: false
+          file-install: false
+      - name: Cache gems
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/gems
+          key: gems-bashcov-3.3.0
+      - name: Install bashcov
+        run: gem install bashcov -v 3.3.0 --no-document
+      - name: Add gem binaries to PATH
+        run: echo "$HOME/gems/bin" >> "$GITHUB_PATH"
+      - name: Run coverage
+        run: make coverage
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [[ ! -f coverage/.resultset.json ]]; then
+            echo "::warning::Coverage results not found"
+            exit 0
+          fi
+          jq -r '
+            to_entries | map(select(.value.coverage != null)) | first | .value.coverage | to_entries |
+            map({
+              file: (.key | ltrimstr(env.GITHUB_WORKSPACE + "/")),
+              total: ([.value[] | select(. != null)] | length),
+              hit: ([.value[] | select(. != null and . > 0)] | length)
+            }) |
+            sort_by(.file) |
+            (map(.total) | add) as $t |
+            (map(.hit) | add) as $h |
+            "## Coverage Report\n\n**Line Coverage: \($h)/\($t) (\(($h / $t * 10000 | round) / 100)%)**\n\n| File | Lines | Hit | Coverage |\n|------|------:|----:|---------:|" +
+            (map("\n| `\(.file)` | \(.total) | \(.hit) | \(if .total > 0 then ((.hit / .total * 10000 | round) / 100) else 0 end)% |") | join(""))
+          ' coverage/.resultset.json >> "$GITHUB_STEP_SUMMARY"

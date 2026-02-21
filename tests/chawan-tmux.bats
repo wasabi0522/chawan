@@ -1,0 +1,239 @@
+#!/usr/bin/env bats
+
+setup() {
+  load test_helper
+
+  setup_mocks
+  mock_fzf_available
+
+  # Mock tmux: record calls and handle show-option and -V
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      -V) echo "tmux 3.4" ;;
+      show-option)
+        # Default: return empty (use default values)
+        echo ""
+        ;;
+    esac
+  }
+  export -f tmux
+
+  CHAWAN_TMUX="$PROJECT_ROOT/chawan.tmux"
+}
+
+teardown() {
+  teardown_mocks
+}
+
+# --- tmux version too old ---
+
+@test "chawan.tmux: error when tmux version is too old (3.2)" {
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      -V) echo "tmux 3.2" ;;
+      show-option) echo "" ;;
+    esac
+  }
+  export -f tmux
+
+  run "$CHAWAN_TMUX"
+  [ "$status" -eq 1 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [[ "$output" == *"display-message"* ]]
+  [[ "$output" == *"3.3"* ]]
+}
+
+# --- fzf not installed ---
+
+@test "chawan.tmux: error when fzf is not installed" {
+  # Override: fzf not found
+  fzf() {
+    return 1
+  }
+  export -f fzf
+
+  command() {
+    if [[ "$1" == "-v" && "$2" == "fzf" ]]; then
+      return 1
+    fi
+    builtin command "$@"
+  }
+  export -f command
+
+  run "$CHAWAN_TMUX"
+  [ "$status" -eq 1 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [[ "$output" == *"display-message"* ]]
+  [[ "$output" == *"fzf"* ]]
+}
+
+# --- fzf version too old ---
+
+@test "chawan.tmux: error when fzf version is too old (0.62)" {
+  mock_fzf_available "0.62.0 (brew)"
+
+  run "$CHAWAN_TMUX"
+  [ "$status" -eq 1 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [[ "$output" == *"display-message"* ]]
+  [[ "$output" == *"0.63"* ]]
+}
+
+# --- fzf OK: bind-key is called ---
+
+@test "chawan.tmux: bind-key is called when fzf is available" {
+  run "$CHAWAN_TMUX"
+  [ "$status" -eq 0 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [[ "$output" == *"bind-key"* ]]
+}
+
+# --- default key ---
+
+@test "chawan.tmux: uses default key S when @chawan-key is unset" {
+  run "$CHAWAN_TMUX"
+  [ "$status" -eq 0 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [[ "$output" == *"bind-key S "* ]]
+}
+
+# --- custom key ---
+
+@test "chawan.tmux: error when @chawan-key is invalid" {
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      -V) echo "tmux 3.4" ;;
+      show-option)
+        if [[ "$3" == "@chawan-key" ]]; then
+          echo '!@#'
+        else
+          echo ""
+        fi
+        ;;
+    esac
+  }
+  export -f tmux
+
+  run "$CHAWAN_TMUX"
+  [ "$status" -eq 1 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [[ "$output" == *"display-message"* ]]
+  [[ "$output" == *"invalid key binding"* ]]
+}
+
+@test "chawan.tmux: uses custom key F when @chawan-key is set" {
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      -V) echo "tmux 3.4" ;;
+      show-option)
+        if [[ "$3" == "@chawan-key" ]]; then
+          echo "F"
+        else
+          echo ""
+        fi
+        ;;
+    esac
+  }
+  export -f tmux
+
+  run "$CHAWAN_TMUX"
+  [ "$status" -eq 0 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [[ "$output" == *"bind-key F "* ]]
+}
+
+# --- mode-specific keybindings ---
+
+@test "chawan.tmux: binds window key when @chawan-key-window is set" {
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      -V) echo "tmux 3.4" ;;
+      show-option)
+        if [[ "$3" == "@chawan-key-window" ]]; then
+          echo "W"
+        else
+          echo ""
+        fi
+        ;;
+    esac
+  }
+  export -f tmux
+
+  run "$CHAWAN_TMUX"
+  [ "$status" -eq 0 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [[ "$output" == *"bind-key W run-shell -b"* ]]
+  [[ "$output" == *"window"* ]]
+}
+
+@test "chawan.tmux: binds pane key when @chawan-key-pane is set" {
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      -V) echo "tmux 3.4" ;;
+      show-option)
+        if [[ "$3" == "@chawan-key-pane" ]]; then
+          echo "P"
+        else
+          echo ""
+        fi
+        ;;
+    esac
+  }
+  export -f tmux
+
+  run "$CHAWAN_TMUX"
+  [ "$status" -eq 0 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [[ "$output" == *"bind-key P run-shell -b"* ]]
+  [[ "$output" == *"pane"* ]]
+}
+
+@test "chawan.tmux: skips window/pane binding when not configured" {
+  run "$CHAWAN_TMUX"
+  [ "$status" -eq 0 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  # Only the default S key binding should be present
+  local bind_count
+  bind_count=$(grep -c "bind-key" "$MOCK_TMUX_CALLS")
+  [ "$bind_count" -eq 1 ]
+}
+
+@test "chawan.tmux: error when @chawan-key-window is invalid" {
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      -V) echo "tmux 3.4" ;;
+      show-option)
+        if [[ "$3" == "@chawan-key-window" ]]; then
+          echo '!@#'
+        else
+          echo ""
+        fi
+        ;;
+    esac
+  }
+  export -f tmux
+
+  run "$CHAWAN_TMUX"
+  [ "$status" -eq 1 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [[ "$output" == *"display-message"* ]]
+  [[ "$output" == *"invalid key binding"* ]]
+}
