@@ -43,10 +43,10 @@ jobs:
           key: gems-bashcov-3.3.0
       - name: Install bashcov
         run: gem install bashcov -v 3.3.0 --no-document
+      - name: Add gem binaries to PATH
+        run: echo "$HOME/gems/bin" >> "$GITHUB_PATH"
       - name: Run coverage
         run: make coverage
-        env:
-          PATH: ~/gems/bin:$PATH
       - name: Coverage summary
         if: always()
         run: |
