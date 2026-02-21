@@ -21,3 +21,29 @@ jobs:
           sudo apt-get install -y bats
       - name: Run tests
         run: bats tests/
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+          sudo gem install bashcov
+      - name: Run coverage
+        run: make coverage
+      - name: Coverage summary
+        run: |
+          jq -r '
+            to_entries[0].value.coverage | to_entries |
+            map({
+              file: (.key | ltrimstr(env.GITHUB_WORKSPACE + "/")),
+              total: ([.value[] | select(. != null)] | length),
+              hit: ([.value[] | select(. != null and . > 0)] | length)
+            }) |
+            sort_by(.file) |
+            (map(.total) | add) as $t |
+            (map(.hit) | add) as $h |
+            "## Coverage Report\n\n**Line Coverage: \($h)/\($t) (\(($h / $t * 10000 | round) / 100)%)**\n\n| File | Lines | Hit | Coverage |\n|------|------:|----:|---------:|" +
+            (map("\n| `\(.file)` | \(.total) | \(.hit) | \(if .total > 0 then ((.hit / .total * 10000 | round) / 100) else 0 end)% |") | join(""))
+          ' coverage/.resultset.json >> "$GITHUB_STEP_SUMMARY"
