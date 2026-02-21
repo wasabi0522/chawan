@@ -75,8 +75,8 @@ compute_header_width() {
     popup_cols=$raw_value
   fi
 
-  # 8 = fzf border + padding (4 left + 4 right)
-  local fzf_chrome=8
+  # 10 = fzf border + padding (4 left + 4 right) + tmux popup border (1 left + 1 right)
+  local fzf_chrome=10
   if [[ "$preview_on" == "on" && "$preview_pos" =~ ^(left|right) ]]; then
     local preview_pct=50
     if [[ "$preview_pos" =~ ([0-9]+)% ]]; then
@@ -152,7 +152,7 @@ main() {
   # Launch fzf (enter:accept outputs selected line; other actions handled by chawan-fzf-action.sh)
   # fzf exits 0 on selection, 1 on no match, 130 on abort (esc/ctrl-c)
   local selected fzf_exit=0
-  selected=$(fzf --tmux "center,${popup_width},${popup_height}" \
+  selected=$(fzf --tmux "center,${popup_width},${popup_height},border-native" \
     --layout reverse --header-first \
     --border rounded --border-label ' chawan ' \
     --header "$initial_header" --header-border line \

@@ -121,8 +121,8 @@ teardown() {
 
   run compute_header_width "80%" "on" "right,50%"
   [ "$status" -eq 0 ]
-  # 200 * 80/100 = 160 cols, 160 * 50/100 - 8 = 72
-  [ "$output" = "72" ]
+  # 200 * 80/100 = 160 cols, 160 * 50/100 - 10 = 70
+  [ "$output" = "70" ]
 }
 
 @test "compute_header_width: absolute popup without preview" {
@@ -133,8 +133,8 @@ teardown() {
 
   run compute_header_width "120" "off" "right,50%"
   [ "$status" -eq 0 ]
-  # 120 - 8 = 112
-  [ "$output" = "112" ]
+  # 120 - 10 = 110
+  [ "$output" = "110" ]
 }
 
 @test "compute_header_width: up/down preview uses full width" {
@@ -145,8 +145,8 @@ teardown() {
 
   run compute_header_width "80%" "on" "up,50%"
   [ "$status" -eq 0 ]
-  # 200 * 80/100 = 160, full width: 160 - 8 = 152
-  [ "$output" = "152" ]
+  # 200 * 80/100 = 160, full width: 160 - 10 = 150
+  [ "$output" = "150" ]
 }
 
 @test "compute_header_width: non-numeric popup defaults to 80" {
@@ -157,8 +157,8 @@ teardown() {
 
   run compute_header_width "abc" "off" "right,50%"
   [ "$status" -eq 0 ]
-  # fallback 80 - 8 = 72
-  [ "$output" = "72" ]
+  # fallback 80 - 10 = 70
+  [ "$output" = "70" ]
 }
 
 # --- build_headers ---
