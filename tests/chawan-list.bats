@@ -258,7 +258,7 @@ EOF
   [[ "${lines[2]}" == prezto:0.1$'\t'* ]]
 }
 
-@test "chawan-list pane: active pane in attached session gets * marker" {
+@test "chawan-list pane: focused pane (active pane + active window + attached session) gets * marker" {
   cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
 prezto:0.0	0	zsh	212x103	~/dotfiles
 my-project:0.0	1	claude	159x40	~/ghq/chawan
@@ -269,10 +269,27 @@ EOF
   [ "$status" -eq 0 ]
   # prezto:0.0 not active
   [[ "${lines[1]}" == prezto:0.0$'\t'" "* ]]
-  # my-project:0.0 active in attached session
+  # my-project:0.0 focused (active pane + active window + attached session)
   [[ "${lines[2]}" == my-project:0.0$'\t'"*"* ]]
   # my-project:0.1 not active
   [[ "${lines[3]}" == my-project:0.1$'\t'" "* ]]
+}
+
+@test "chawan-list pane: active pane in non-active window does not get * marker" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+my-project:0.0	1	claude	159x40	~/ghq/chawan
+my-project:1.0	0	zsh	159x40	~/ghq/chawan
+my-project:1.1	0	vim	159x40	~/ghq/chawan
+EOF
+
+  run "$CHAWAN_LIST" pane
+  [ "$status" -eq 0 ]
+  # my-project:0.0 focused pane (active pane + active window + attached session)
+  [[ "${lines[1]}" == my-project:0.0$'\t'"*"* ]]
+  # my-project:1.0 active pane in non-active window — no marker
+  [[ "${lines[2]}" == my-project:1.0$'\t'" "* ]]
+  # my-project:1.1 not active at all
+  [[ "${lines[3]}" == my-project:1.1$'\t'" "* ]]
 }
 
 @test "chawan-list pane: output is ID<tab>display two-field format" {
