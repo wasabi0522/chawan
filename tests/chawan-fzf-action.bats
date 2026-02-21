@@ -232,6 +232,12 @@ setup() {
 
 # --- switch_to_mode ---
 
+@test "switch_to_mode: unknown mode produces no output" {
+  run switch_to_mode "invalid"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
 @test "switch_to_mode: includes reload, change-prompt, change-header, first" {
   run switch_to_mode "session"
   [[ "$output" == "reload("* ]]

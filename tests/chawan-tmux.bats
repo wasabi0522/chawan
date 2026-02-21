@@ -85,6 +85,29 @@ teardown() {
 
 # --- custom key ---
 
+@test "chawan.tmux: error when @chawan-key is invalid" {
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      show-option)
+        if [[ "$3" == "@chawan-key" ]]; then
+          echo '!@#'
+        else
+          echo ""
+        fi
+        ;;
+    esac
+  }
+  export -f tmux
+
+  run "$CHAWAN_TMUX"
+  [ "$status" -eq 1 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [[ "$output" == *"display-message"* ]]
+  [[ "$output" == *"invalid key binding"* ]]
+}
+
 @test "chawan.tmux: uses custom key F when @chawan-key is set" {
   tmux() {
     echo "$@" >>"$MOCK_TMUX_CALLS"
