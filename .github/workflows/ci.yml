@@ -5,15 +5,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: luizm/action-sh-checker@v0.10.0
-        env:
-          SHFMT_OPTS: "-i 2 -ci"
-        with:
-          sh_checker_shellcheck_disable: false
-          sh_checker_shfmt_disable: false
-          sh_checker_checkbashisms_enable: false
-          sh_checker_scandir: "./scripts"
-          sh_checker_additional_files: "chawan.tmux"
+      - name: Install shfmt
+        run: go install mvdan.cc/sh/v3/cmd/shfmt@latest
+      - name: Lint
+        run: make lint
   test:
     runs-on: ubuntu-latest
     steps:
