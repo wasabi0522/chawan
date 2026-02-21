@@ -13,7 +13,7 @@ main() {
       [[ -z "$name" ]] && return 0
 
       # Forbidden characters: . and :
-      if [[ "$name" == *.* || "$name" == *:* ]]; then
+      if [[ "$name" == *[.:]* ]]; then
         echo "Error: session name cannot contain '.' or ':'" >&2
         return 1
       fi

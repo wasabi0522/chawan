@@ -33,7 +33,7 @@ find_current_pos() {
       ;;
   esac
   # NR - 1 adjusts for the header line (first line) added by chawan-list.sh
-  pos=$(echo "$list" | awk -F'\t' -v target="$current_target" '$1 == target { print NR - 1; exit }')
+  pos=$(printf '%s\n' "$list" | awk -F'\t' -v target="$current_target" '$1 == target { print NR - 1; exit }')
   echo "${pos:-1}"
 }
 
@@ -75,7 +75,7 @@ compute_header_width() {
 
   # 8 = fzf border + padding (4 left + 4 right)
   local fzf_chrome=8
-  if [[ "$preview_on" == "on" ]]; then
+  if [[ "$preview_on" == "on" && "$preview_pos" =~ ^(left|right) ]]; then
     local preview_pct=50
     if [[ "$preview_pos" =~ ([0-9]+)% ]]; then
       preview_pct="${BASH_REMATCH[1]}"

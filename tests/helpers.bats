@@ -82,6 +82,21 @@ teardown() {
   [ "$output" = "session" ]
 }
 
+@test "mode_from_id: session name with dot returns session (not pane)" {
+  run mode_from_id "my.dotfiles"
+  [ "$output" = "session" ]
+}
+
+@test "mode_from_id: window ID with dotted session returns window" {
+  run mode_from_id "my.dotfiles:0"
+  [ "$output" = "window" ]
+}
+
+@test "mode_from_id: pane ID with dotted session returns pane" {
+  run mode_from_id "my.dotfiles:0.1"
+  [ "$output" = "pane" ]
+}
+
 # --- make_tab_bar ---
 
 @test "make_tab_bar highlights session mode" {

@@ -111,6 +111,75 @@ teardown() {
   [ "$output" = "3" ]
 }
 
+# --- compute_header_width ---
+
+@test "compute_header_width: percentage popup with right preview" {
+  tmux() {
+    if [[ "$1" == "display-message" ]]; then echo "200"; fi
+  }
+  export -f tmux
+
+  run compute_header_width "80%" "on" "right,50%"
+  [ "$status" -eq 0 ]
+  # 200 * 80/100 = 160 cols, 160 * 50/100 - 8 = 72
+  [ "$output" = "72" ]
+}
+
+@test "compute_header_width: absolute popup without preview" {
+  tmux() {
+    if [[ "$1" == "display-message" ]]; then echo "200"; fi
+  }
+  export -f tmux
+
+  run compute_header_width "120" "off" "right,50%"
+  [ "$status" -eq 0 ]
+  # 120 - 8 = 112
+  [ "$output" = "112" ]
+}
+
+@test "compute_header_width: up/down preview uses full width" {
+  tmux() {
+    if [[ "$1" == "display-message" ]]; then echo "200"; fi
+  }
+  export -f tmux
+
+  run compute_header_width "80%" "on" "up,50%"
+  [ "$status" -eq 0 ]
+  # 200 * 80/100 = 160, full width: 160 - 8 = 152
+  [ "$output" = "152" ]
+}
+
+@test "compute_header_width: non-numeric popup defaults to 80" {
+  tmux() {
+    if [[ "$1" == "display-message" ]]; then echo "200"; fi
+  }
+  export -f tmux
+
+  run compute_header_width "abc" "off" "right,50%"
+  [ "$status" -eq 0 ]
+  # fallback 80 - 8 = 72
+  [ "$output" = "72" ]
+}
+
+# --- build_headers ---
+
+@test "build_headers: exports three header variables with tab bar and hint" {
+  build_headers 80
+  [[ -n "$HEADER_SESSION" ]]
+  [[ "$HEADER_SESSION" == *"Session"* ]]
+  [[ "$HEADER_SESSION" == *"Tab/S-Tab: switch"* ]]
+  [[ -n "$HEADER_WINDOW" ]]
+  [[ "$HEADER_WINDOW" == *"Window"* ]]
+  [[ -n "$HEADER_PANE" ]]
+  [[ "$HEADER_PANE" == *"Pane"* ]]
+}
+
+@test "build_headers: narrow width uses minimum gap of 2" {
+  build_headers 10
+  [[ -n "$HEADER_SESSION" ]]
+  [[ "$HEADER_SESSION" == *"Session"* ]]
+}
+
 # --- build_footer ---
 
 @test "build_footer: uses provided keybindings" {

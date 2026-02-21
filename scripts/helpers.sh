@@ -39,12 +39,12 @@ display_message() {
 }
 
 # Determines mode from a tmux target ID format:
-#   contains dot → pane (e.g. "sess:0.1")
-#   contains colon → window (e.g. "sess:0")
-#   otherwise → session (e.g. "sess")
+#   colon+dot → pane (e.g. "sess:0.1")
+#   colon → window (e.g. "sess:0")
+#   otherwise → session (e.g. "sess", "my.dotfiles")
 mode_from_id() {
   local id="$1"
-  if [[ "$id" == *.* ]]; then
+  if [[ "$id" == *:*.* ]]; then
     echo "pane"
   elif [[ "$id" == *:* ]]; then
     echo "window"
