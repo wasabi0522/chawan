@@ -21,21 +21,7 @@ One fzf popup with tab-based mode switching. No menus, no extra steps.
 - **Full lifecycle** — create, rename, delete, and switch in one place
 - **Safe deletion** — deleting the current session automatically switches to another before removing it
 
-<!-- TODO: Replace with actual GIF recording -->
-<!-- ![demo](https://github.com/wasabi0522/chawan/assets/demo.gif) -->
-
-```
-╭───────────────────────── chawan ─────────────────────────╮
-│  Session   Window   Pane   Tab/Shift-Tab: switch mode    │
-├────────────────────────────┬── Preview: my-project ──────┤
-│  Session> _          3/3   │ $ vim src/main.rs           │
-│ ▍* my-project       3w     │ ~                           │
-│   dotfiles          1w     │ ~                           │
-│   work/api          2w     │                             │
-├────────────────────────────┴─────────────────────────────┤
-│  enter:switch  ctrl-o:new  ctrl-d:del  ctrl-r:rename     │
-╰──────────────────────────────────────────────────────────╯
-```
+![screenshot](docs/images/screenshot.png)
 
 ## Installation
 
