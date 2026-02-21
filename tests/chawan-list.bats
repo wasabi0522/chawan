@@ -1,0 +1,456 @@
+#!/usr/bin/env bats
+
+setup() {
+  load test_helper
+
+  setup_mocks
+  setup_mock_output
+  mock_tmux_with_output
+
+  CHAWAN_LIST="$PROJECT_ROOT/scripts/chawan-list.sh"
+}
+
+teardown() {
+  teardown_mocks
+}
+
+# --- Session mode ---
+
+@test "chawan-list session: first line is column header" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto	0	3
+EOF
+
+  run "$CHAWAN_LIST" session
+  [ "$status" -eq 0 ]
+  # Header line: empty ID + tab + column labels
+  local id display
+  id="$(echo "${lines[0]}" | cut -f1)"
+  [ -z "$id" ]
+  display="$(echo "${lines[0]}" | cut -f2)"
+  [[ "$display" == *"NAME"* ]]
+  [[ "$display" == *"WIN"* ]]
+}
+
+@test "chawan-list session: formats list-sessions output correctly" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto	0	3
+dotfiles	0	1
+EOF
+
+  run "$CHAWAN_LIST" session
+  [ "$status" -eq 0 ]
+  [ "${#lines[@]}" -eq 3 ]
+  # Each line has ID<tab>display format (skip header at index 0)
+  [[ "${lines[1]}" == prezto$'\t'"   "* ]]
+  [[ "${lines[2]}" == dotfiles$'\t'"   "* ]]
+}
+
+@test "chawan-list session: attached session gets * marker" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto	0	3
+my-project	1	2
+EOF
+
+  run "$CHAWAN_LIST" session
+  [ "$status" -eq 0 ]
+  # Non-attached: space marker
+  [[ "${lines[1]}" == prezto$'\t'" "* ]]
+  # Attached: * marker and (attached) suffix
+  [[ "${lines[2]}" == my-project$'\t'"*"* ]]
+  [[ "${lines[2]}" == *"(attached)"* ]]
+}
+
+@test "chawan-list session: non-attached session has no (attached) suffix" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto	0	3
+EOF
+
+  run "$CHAWAN_LIST" session
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" != *"(attached)"* ]]
+}
+
+@test "chawan-list session: output is ID<tab>display two-field format" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto	0	3
+EOF
+
+  run "$CHAWAN_LIST" session
+  [ "$status" -eq 0 ]
+  # Split by tab: should have exactly 2 fields (check data line, not header)
+  local id display
+  id="$(echo "${lines[1]}" | cut -f1)"
+  display="$(echo "${lines[1]}" | cut -f2)"
+  [ "$id" = "prezto" ]
+  [ -n "$display" ]
+  # No additional tabs in display portion
+  local tab_count
+  tab_count="$(echo "${lines[1]}" | awk -F'\t' '{print NF}')"
+  [ "$tab_count" -eq 2 ]
+}
+
+@test "chawan-list session: displays window count with 'w' suffix" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+my-project	0	5
+EOF
+
+  run "$CHAWAN_LIST" session
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" == *"5w"* ]]
+}
+
+@test "chawan-list session: handles slash in session name" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+org/project	1	3
+EOF
+
+  run "$CHAWAN_LIST" session
+  [ "$status" -eq 0 ]
+  local id
+  id="$(echo "${lines[1]}" | cut -f1)"
+  [ "$id" = "org/project" ]
+  [[ "${lines[1]}" == *"*"* ]]
+  [[ "${lines[1]}" == *"(attached)"* ]]
+}
+
+@test "chawan-list session: display portion contains no literal backslash-t" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto	0	3
+dotfiles	1	1
+EOF
+
+  run "$CHAWAN_LIST" session
+  [ "$status" -eq 0 ]
+  for line in "${lines[@]}"; do
+    local display
+    display="$(echo "$line" | cut -f2)"
+    [[ "$display" != *\\t* ]]
+  done
+}
+
+# --- Window mode ---
+
+@test "chawan-list window: first line is column header" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto:0	0	zsh	1	~/dotfiles
+EOF
+
+  run "$CHAWAN_LIST" window
+  [ "$status" -eq 0 ]
+  local id display
+  id="$(echo "${lines[0]}" | cut -f1)"
+  [ -z "$id" ]
+  display="$(echo "${lines[0]}" | cut -f2)"
+  [[ "$display" == *"ID"* ]]
+  [[ "$display" == *"NAME"* ]]
+  [[ "$display" == *"PANE"* ]]
+  [[ "$display" == *"PATH"* ]]
+}
+
+@test "chawan-list window: formats list-windows output correctly" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto:0	0	zsh	1	~/dotfiles
+prezto:1	0	vim	2	~/projects
+EOF
+
+  run "$CHAWAN_LIST" window
+  [ "$status" -eq 0 ]
+  [ "${#lines[@]}" -eq 3 ]
+  [[ "${lines[1]}" == prezto:0$'\t'* ]]
+  [[ "${lines[2]}" == prezto:1$'\t'* ]]
+}
+
+@test "chawan-list window: active window in attached session gets * marker" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto:0	0	zsh	1	~/dotfiles
+my-project:0	1	vim	1	~/ghq/chawan
+my-project:1	0	zsh	2	~/ghq/chawan
+EOF
+
+  run "$CHAWAN_LIST" window
+  [ "$status" -eq 0 ]
+  # prezto:0 not active
+  [[ "${lines[1]}" == prezto:0$'\t'" "* ]]
+  # my-project:0 is active in attached session
+  [[ "${lines[2]}" == my-project:0$'\t'"*"* ]]
+  # my-project:1 not active (even though session is attached)
+  [[ "${lines[3]}" == my-project:1$'\t'" "* ]]
+}
+
+@test "chawan-list window: output is ID<tab>display two-field format" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto:0	0	zsh	1	~/dotfiles
+EOF
+
+  run "$CHAWAN_LIST" window
+  [ "$status" -eq 0 ]
+  local tab_count
+  tab_count="$(echo "${lines[1]}" | awk -F'\t' '{print NF}')"
+  [ "$tab_count" -eq 2 ]
+}
+
+@test "chawan-list window: displays pane count and path" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto:0	0	zsh	3	~/dotfiles
+EOF
+
+  run "$CHAWAN_LIST" window
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" == *"3p"* ]]
+  [[ "${lines[1]}" == *"~/dotfiles"* ]]
+}
+
+@test "chawan-list window: displays window name" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto:0	0	vim	1	~/projects
+EOF
+
+  run "$CHAWAN_LIST" window
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" == *"vim"* ]]
+}
+
+@test "chawan-list window: display portion contains no literal backslash-t" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto:0	0	zsh	1	~/dotfiles
+prezto:1	0	vim	2	~/projects
+EOF
+
+  run "$CHAWAN_LIST" window
+  [ "$status" -eq 0 ]
+  for line in "${lines[@]}"; do
+    local display
+    display="$(echo "$line" | cut -f2)"
+    [[ "$display" != *\\t* ]]
+  done
+}
+
+# --- Pane mode ---
+
+@test "chawan-list pane: first line is column header" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto:0.0	0	prezto:0.0	zsh	212x103
+EOF
+
+  run "$CHAWAN_LIST" pane
+  [ "$status" -eq 0 ]
+  local id display
+  id="$(echo "${lines[0]}" | cut -f1)"
+  [ -z "$id" ]
+  display="$(echo "${lines[0]}" | cut -f2)"
+  [[ "$display" == *"ID"* ]]
+  [[ "$display" == *"TITLE"* ]]
+  [[ "$display" == *"CMD"* ]]
+  [[ "$display" == *"SIZE"* ]]
+}
+
+@test "chawan-list pane: formats list-panes output correctly" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto:0.0	0	prezto:0.0	zsh	212x103
+prezto:0.1	0	prezto:0.1	vim	106x103
+EOF
+
+  run "$CHAWAN_LIST" pane
+  [ "$status" -eq 0 ]
+  [ "${#lines[@]}" -eq 3 ]
+  [[ "${lines[1]}" == prezto:0.0$'\t'* ]]
+  [[ "${lines[2]}" == prezto:0.1$'\t'* ]]
+}
+
+@test "chawan-list pane: focused pane (active pane + active window + attached session) gets * marker" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto:0.0	0	prezto:0.0	zsh	212x103
+my-project:0.0	1	my-project:0.0	claude	159x40
+my-project:0.1	0	my-project:0.1	zsh	159x40
+EOF
+
+  run "$CHAWAN_LIST" pane
+  [ "$status" -eq 0 ]
+  # prezto:0.0 not active
+  [[ "${lines[1]}" == prezto:0.0$'\t'" "* ]]
+  # my-project:0.0 focused (active pane + active window + attached session)
+  [[ "${lines[2]}" == my-project:0.0$'\t'"*"* ]]
+  # my-project:0.1 not active
+  [[ "${lines[3]}" == my-project:0.1$'\t'" "* ]]
+}
+
+@test "chawan-list pane: active pane in non-active window does not get * marker" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+my-project:0.0	1	my-project:0.0	claude	159x40
+my-project:1.0	0	my-project:1.0	zsh	159x40
+my-project:1.1	0	my-project:1.1	vim	159x40
+EOF
+
+  run "$CHAWAN_LIST" pane
+  [ "$status" -eq 0 ]
+  # my-project:0.0 focused pane (active pane + active window + attached session)
+  [[ "${lines[1]}" == my-project:0.0$'\t'"*"* ]]
+  # my-project:1.0 active pane in non-active window — no marker
+  [[ "${lines[2]}" == my-project:1.0$'\t'" "* ]]
+  # my-project:1.1 not active at all
+  [[ "${lines[3]}" == my-project:1.1$'\t'" "* ]]
+}
+
+@test "chawan-list pane: output is ID<tab>display two-field format" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto:0.0	0	prezto:0.0	zsh	212x103
+EOF
+
+  run "$CHAWAN_LIST" pane
+  [ "$status" -eq 0 ]
+  local tab_count
+  tab_count="$(echo "${lines[1]}" | awk -F'\t' '{print NF}')"
+  [ "$tab_count" -eq 2 ]
+}
+
+@test "chawan-list pane: displays title, command, and dimensions" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto:0.0	0	my-pane	zsh	212x103
+EOF
+
+  run "$CHAWAN_LIST" pane
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" == *"my-pane"* ]]
+  [[ "${lines[1]}" == *"zsh"* ]]
+  [[ "${lines[1]}" == *"212x103"* ]]
+}
+
+@test "chawan-list pane: display portion contains no literal backslash-t" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+prezto:0.0	0	prezto:0.0	zsh	212x103
+prezto:0.1	0	prezto:0.1	vim	106x103
+EOF
+
+  run "$CHAWAN_LIST" pane
+  [ "$status" -eq 0 ]
+  for line in "${lines[@]}"; do
+    local display
+    display="$(echo "$line" | cut -f2)"
+    [[ "$display" != *\\t* ]]
+  done
+}
+
+# --- MRU sort ---
+
+@test "chawan-list session: mru sort orders by activity descending" {
+  export CHAWAN_SORT=mru
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+alpha	0	2	1000
+beta	0	1	3000
+gamma	0	3	2000
+EOF
+
+  run "$CHAWAN_LIST" session
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" == beta$'\t'* ]]
+  [[ "${lines[2]}" == gamma$'\t'* ]]
+  [[ "${lines[3]}" == alpha$'\t'* ]]
+}
+
+@test "chawan-list window: mru sort orders by activity descending" {
+  export CHAWAN_SORT=mru
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+alpha:0	0	zsh	1	~/a	1000
+beta:0	0	vim	2	~/b	3000
+gamma:0	0	zsh	1	~/c	2000
+EOF
+
+  run "$CHAWAN_LIST" window
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" == beta:0$'\t'* ]]
+  [[ "${lines[2]}" == gamma:0$'\t'* ]]
+  [[ "${lines[3]}" == alpha:0$'\t'* ]]
+}
+
+@test "chawan-list pane: mru sort orders by activity descending" {
+  export CHAWAN_SORT=mru
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+alpha:0.0	0	alpha:0.0	zsh	80x24	1000
+beta:0.0	0	beta:0.0	vim	80x24	3000
+gamma:0.0	0	gamma:0.0	zsh	80x24	2000
+EOF
+
+  run "$CHAWAN_LIST" pane
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" == beta:0.0$'\t'* ]]
+  [[ "${lines[2]}" == gamma:0.0$'\t'* ]]
+  [[ "${lines[3]}" == alpha:0.0$'\t'* ]]
+}
+
+# --- Name sort ---
+
+@test "chawan-list session: name sort orders alphabetically" {
+  export CHAWAN_SORT=name
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+gamma	0	3	2000
+alpha	0	2	1000
+beta	0	1	3000
+EOF
+
+  run "$CHAWAN_LIST" session
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" == alpha$'\t'* ]]
+  [[ "${lines[2]}" == beta$'\t'* ]]
+  [[ "${lines[3]}" == gamma$'\t'* ]]
+}
+
+@test "chawan-list window: name sort orders by window name" {
+  export CHAWAN_SORT=name
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+sess:0	0	zsh	1	~/a	1000
+sess:1	0	bash	2	~/b	3000
+sess:2	0	vim	1	~/c	2000
+EOF
+
+  run "$CHAWAN_LIST" window
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" == sess:1$'\t'* ]]
+  [[ "${lines[2]}" == sess:2$'\t'* ]]
+  [[ "${lines[3]}" == sess:0$'\t'* ]]
+}
+
+@test "chawan-list pane: name sort orders by pane title" {
+  export CHAWAN_SORT=name
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+sess:0.0	0	z-title	zsh	80x24	1000
+sess:0.1	0	a-title	vim	80x24	3000
+sess:0.2	0	m-title	zsh	80x24	2000
+EOF
+
+  run "$CHAWAN_LIST" pane
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" == sess:0.1$'\t'* ]]
+  [[ "${lines[2]}" == sess:0.2$'\t'* ]]
+  [[ "${lines[3]}" == sess:0.0$'\t'* ]]
+}
+
+# --- Default sort ---
+
+@test "chawan-list session: default sort preserves tmux order" {
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+gamma	0	3	2000
+alpha	0	2	1000
+beta	0	1	3000
+EOF
+
+  run "$CHAWAN_LIST" session
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" == gamma$'\t'* ]]
+  [[ "${lines[2]}" == alpha$'\t'* ]]
+  [[ "${lines[3]}" == beta$'\t'* ]]
+}
+
+# --- Unknown mode ---
+
+@test "chawan-list unknown mode: returns empty output with exit 0" {
+  run "$CHAWAN_LIST" unknown
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
+@test "chawan-list no argument: returns empty output with exit 0" {
+  run "$CHAWAN_LIST"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
