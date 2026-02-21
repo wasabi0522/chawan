@@ -42,7 +42,7 @@ jobs:
           path: ~/gems
           key: gems-bashcov-3.3.0
       - name: Install bashcov
-        run: gem install bashcov -v 3.3.0
+        run: gem install bashcov -v 3.3.0 --no-document
       - name: Run coverage
         run: make coverage
         env:
