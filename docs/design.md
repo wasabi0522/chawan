@@ -357,7 +357,7 @@ chawan-fzf-action.sh は各アクションに応じたfzfアクション文字�
 |------|------|-------------|------|
 | Switch | `Enter` | `tmux switch-client -t {name}` | |
 | New | `Ctrl-O` | `tmux new-session -d -s {name} && tmux switch-client -t {name}` | execute経由で名前入力。作成+switch後にpopup終了 |
-| Delete | `Ctrl-D` | `tmux kill-session -t {name}` | 現在セッションは安全ガードで削除不可 |
+| Delete | `Ctrl-D` | `tmux kill-session -t {name}` | 現在セッション削除時は先に`switch-client`で別セッションに切り替え。最後のセッション削除時はtmuxサーバーが終了する |
 | Rename | `Ctrl-R` | `tmux rename-session -t {name} {new}` | execute経由で名前入力後リスト更新 |
 
 ### Window操作
@@ -511,8 +511,8 @@ coverage/
 
 ### 削除保護
 
-- 現在接続中のセッション自体は削除をスキップ（`tmux display-message -p '#S'`で現在セッション名を取得し一致時は`display_message`で警告して中断）
-- セッション最後のウィンドウ削除→セッション消滅、ウィンドウ最後のペイン削除→ウィンドウ消滅の連鎖に注意。削除前にウィンドウ数・ペイン数を確認し、最後の1つの場合は警告して中断
+- 現在接続中のセッションを削除する場合は、先に別セッションに切り替え（`switch-client -l`→`-n`フォールバック）てから`kill-session`を実行。他にセッションがない場合は切り替えに失敗するが、そのまま`kill-session`を実行しtmuxサーバーが終了する
+- 最後のウィンドウ削除→セッション消滅、最後のペイン削除→ウィンドウ消滅の連鎖が発生するが、これは許容する
 - `tmux kill-*`コマンドは`2>/dev/null`で存在しないターゲットのエラーを抑制
 
 ### 空リスト・空引数

@@ -36,34 +36,14 @@ main() {
           local current_session
           current_session=$(tmux display-message -p '#S')
           if [[ "$target" == "$current_session" ]]; then
-            local session_count
-            session_count=$(tmux list-sessions 2>/dev/null | wc -l)
-            if ((session_count <= 1)); then
-              display_message "Cannot delete last session: $target"
-              return 0
-            fi
-            tmux switch-client -l 2>/dev/null || tmux switch-client -n 2>/dev/null
+            tmux switch-client -l 2>/dev/null || tmux switch-client -n 2>/dev/null || true
           fi
           tmux kill-session -t "=$target" 2>/dev/null || true
           ;;
         window)
-          local win_session="${target%%:*}"
-          local win_count
-          win_count=$(tmux list-windows -t "=$win_session" 2>/dev/null | wc -l) || win_count=0
-          if ((win_count <= 1)); then
-            display_message "Cannot delete last window in session: $win_session"
-            return 0
-          fi
           tmux kill-window -t "=$target" 2>/dev/null || true
           ;;
         pane)
-          local pane_window="${target%%.*}"
-          local pane_count
-          pane_count=$(tmux list-panes -t "=$pane_window" 2>/dev/null | wc -l) || pane_count=0
-          if ((pane_count <= 1)); then
-            display_message "Cannot delete last pane in window: $pane_window"
-            return 0
-          fi
           tmux kill-pane -t "=$target" 2>/dev/null || true
           ;;
       esac

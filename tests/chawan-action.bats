@@ -127,27 +127,13 @@ teardown() {
   MOCK_DISPLAY_MESSAGE="my-project"
   export MOCK_DISPLAY_MESSAGE
 
-  tmux() {
-    echo "$@" >>"$MOCK_TMUX_CALLS"
-    case "$1" in
-      display-message)
-        echo "$MOCK_DISPLAY_MESSAGE"
-        ;;
-      list-sessions)
-        printf 'my-project:\nother-session:\n'
-        ;;
-    esac
-  }
-  export -f tmux
-
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete session "my-project"
   [ "$status" -eq 0 ]
 
   run cat "$MOCK_TMUX_CALLS"
   [ "${lines[0]}" = "display-message -p #S" ]
-  [ "${lines[1]}" = "list-sessions" ]
-  [ "${lines[2]}" = "switch-client -l" ]
-  [ "${lines[3]}" = "kill-session -t =my-project" ]
+  [ "${lines[1]}" = "switch-client -l" ]
+  [ "${lines[2]}" = "kill-session -t =my-project" ]
 }
 
 @test "chawan-action: delete current session falls back to switch-client -n" {
@@ -159,9 +145,6 @@ teardown() {
     case "$1" in
       display-message)
         echo "$MOCK_DISPLAY_MESSAGE"
-        ;;
-      list-sessions)
-        printf 'my-project:\nother-session:\n'
         ;;
       switch-client)
         if [[ "$2" == "-l" ]]; then
@@ -177,15 +160,14 @@ teardown() {
 
   run cat "$MOCK_TMUX_CALLS"
   [ "${lines[0]}" = "display-message -p #S" ]
-  [ "${lines[1]}" = "list-sessions" ]
-  [ "${lines[2]}" = "switch-client -l" ]
-  [ "${lines[3]}" = "switch-client -n" ]
-  [ "${lines[4]}" = "kill-session -t =my-project" ]
+  [ "${lines[1]}" = "switch-client -l" ]
+  [ "${lines[2]}" = "switch-client -n" ]
+  [ "${lines[3]}" = "kill-session -t =my-project" ]
 }
 
-# --- delete last session: safety guard ---
+# --- delete last session ---
 
-@test "chawan-action: delete last session is blocked (safety guard)" {
+@test "chawan-action: delete last session kills it (no safety guard)" {
   MOCK_DISPLAY_MESSAGE="my-project"
   export MOCK_DISPLAY_MESSAGE
 
@@ -195,8 +177,8 @@ teardown() {
       display-message)
         echo "$MOCK_DISPLAY_MESSAGE"
         ;;
-      list-sessions)
-        printf 'my-project:\n'
+      switch-client)
+        return 1
         ;;
     esac
   }
@@ -205,99 +187,55 @@ teardown() {
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete session "my-project"
   [ "$status" -eq 0 ]
 
-  # Should NOT contain kill-session
-  run grep "kill-session" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 1 ]
+  run cat "$MOCK_TMUX_CALLS"
+  [ "${lines[0]}" = "display-message -p #S" ]
+  [ "${lines[1]}" = "switch-client -l" ]
+  [ "${lines[2]}" = "switch-client -n" ]
+  [ "${lines[3]}" = "kill-session -t =my-project" ]
 }
 
 # --- delete window ---
 
 @test "chawan-action: delete window calls kill-window" {
-  # Mock: list-windows returns 2 windows so deletion is allowed
-  tmux() {
-    echo "$@" >>"$MOCK_TMUX_CALLS"
-    case "$1" in
-      list-windows)
-        printf 'win1\nwin2\n'
-        ;;
-    esac
-  }
-  export -f tmux
-
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete window "my-project:2"
   [ "$status" -eq 0 ]
 
-  run grep "kill-window" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"kill-window -t =my-project:2"* ]]
+  run cat "$MOCK_TMUX_CALLS"
+  [ "${lines[0]}" = "kill-window -t =my-project:2" ]
+  [ "${#lines[@]}" -eq 1 ]
 }
 
-# --- delete window: safety guard ---
+# --- delete last window ---
 
-@test "chawan-action: delete last window is skipped (safety guard)" {
-  tmux() {
-    echo "$@" >>"$MOCK_TMUX_CALLS"
-    case "$1" in
-      list-windows)
-        printf 'win1\n'
-        ;;
-      display-message)
-        echo ""
-        ;;
-    esac
-  }
-  export -f tmux
-
+@test "chawan-action: delete last window kills it (no safety guard)" {
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete window "my-project:0"
   [ "$status" -eq 0 ]
 
-  run grep "kill-window" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 1 ]
+  run cat "$MOCK_TMUX_CALLS"
+  [ "${lines[0]}" = "kill-window -t =my-project:0" ]
+  [ "${#lines[@]}" -eq 1 ]
 }
 
 # --- delete pane ---
 
 @test "chawan-action: delete pane calls kill-pane" {
-  # Mock: list-panes returns 2 panes so deletion is allowed
-  tmux() {
-    echo "$@" >>"$MOCK_TMUX_CALLS"
-    case "$1" in
-      list-panes)
-        printf 'pane1\npane2\n'
-        ;;
-    esac
-  }
-  export -f tmux
-
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my-project:2.1"
   [ "$status" -eq 0 ]
 
-  run grep "kill-pane" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"kill-pane -t =my-project:2.1"* ]]
+  run cat "$MOCK_TMUX_CALLS"
+  [ "${lines[0]}" = "kill-pane -t =my-project:2.1" ]
+  [ "${#lines[@]}" -eq 1 ]
 }
 
-# --- delete pane: safety guard ---
+# --- delete last pane ---
 
-@test "chawan-action: delete last pane is skipped (safety guard)" {
-  tmux() {
-    echo "$@" >>"$MOCK_TMUX_CALLS"
-    case "$1" in
-      list-panes)
-        printf 'pane1\n'
-        ;;
-      display-message)
-        echo ""
-        ;;
-    esac
-  }
-  export -f tmux
-
+@test "chawan-action: delete last pane kills it (no safety guard)" {
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my-project:2.0"
   [ "$status" -eq 0 ]
 
-  run grep "kill-pane" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 1 ]
+  run cat "$MOCK_TMUX_CALLS"
+  [ "${lines[0]}" = "kill-pane -t =my-project:2.0" ]
+  [ "${#lines[@]}" -eq 1 ]
 }
 
 # --- unknown action ---
