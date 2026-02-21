@@ -46,5 +46,6 @@ main() {
 
 # Only run when executed directly, not when sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  set -euo pipefail
   main "$@"
 fi

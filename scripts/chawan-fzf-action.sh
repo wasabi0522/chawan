@@ -7,7 +7,7 @@ printf -v ESCAPED_SCRIPTS_DIR '%q' "$CURRENT_DIR"
 # shellcheck source=scripts/helpers.sh
 source "$CURRENT_DIR/helpers.sh"
 
-# Returns the next mode in the cycle: session → window → pane → session
+# Returns the next mode in the cycle: session -> window -> pane -> session
 next_mode() {
   case "$1" in
     session) echo "window" ;;
@@ -17,7 +17,7 @@ next_mode() {
   esac
 }
 
-# Returns the previous mode in the cycle: session → pane → window → session
+# Returns the previous mode in the cycle: session -> pane -> window -> session
 prev_mode() {
   case "$1" in
     session) echo "pane" ;;
@@ -88,5 +88,6 @@ main() {
 
 # Only run when executed directly, not when sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  set -euo pipefail
   main "$@"
 fi

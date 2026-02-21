@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck source=scripts/helpers.sh
+source "$CURRENT_DIR/helpers.sh"
+
 main() {
   local mode="${1:-}"
   local target="${2:-}"
@@ -10,15 +15,12 @@ main() {
   local new_name
   read -rp "New name: " new_name
 
-  # Empty input: cancel
-  [[ -z "$new_name" ]] && return 0
+  # Empty or whitespace-only input: cancel
+  [[ "$new_name" =~ ^[[:space:]]*$ ]] && return 0
 
   # Validate forbidden characters for session/window rename
   if [[ "$mode" == "session" || "$mode" == "window" ]]; then
-    if [[ "$new_name" == *[.:]* ]]; then
-      echo "Error: name cannot contain '.' or ':'" >&2
-      return 1
-    fi
+    validate_name "$new_name" "$mode" || return 1
   fi
 
   # Duplicate session name check
@@ -44,5 +46,6 @@ main() {
 
 # Only run when executed directly, not when sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  set -euo pipefail
   main "$@"
 fi

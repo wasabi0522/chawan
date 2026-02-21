@@ -27,7 +27,7 @@ teardown_mocks() {
 # Installs a tmux mock that only records calls.
 mock_tmux_record_only() {
   tmux() {
-    echo "$@" >>"$MOCK_TMUX_CALLS"
+    printf '%s\n' "$*" >>"$MOCK_TMUX_CALLS"
   }
   export -f tmux
 }
@@ -35,8 +35,12 @@ mock_tmux_record_only() {
 # Installs a tmux mock that records calls and returns MOCK_TMUX_OUTPUT
 # for list-sessions, list-windows, and list-panes.
 mock_tmux_with_output() {
+  if [[ -z "${MOCK_TMUX_OUTPUT:-}" ]]; then
+    echo "ERROR: call setup_mock_output first" >&2
+    return 1
+  fi
   tmux() {
-    echo "$@" >>"$MOCK_TMUX_CALLS"
+    printf '%s\n' "$*" >>"$MOCK_TMUX_CALLS"
     case "$1" in
       list-sessions | list-windows | list-panes)
         cat "$MOCK_TMUX_OUTPUT"
@@ -48,6 +52,8 @@ mock_tmux_with_output() {
 
 # Installs fzf and command -v mocks for testing chawan.tmux.
 # Default fzf version: 0.63.0
+# NOTE: Overrides 'command' builtin to intercept 'command -v fzf'.
+# Other flags (-V, -p, etc.) pass through to builtin.
 mock_fzf_available() {
   MOCK_FZF_VERSION="${1:-0.63.0 (brew)}"
   export MOCK_FZF_VERSION

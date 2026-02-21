@@ -133,3 +133,47 @@ teardown() {
   run cat "$MOCK_TMUX_CALLS"
   [ "$output" = "display-message hello world" ]
 }
+
+# --- TAB_BAR_VISIBLE_LEN ---
+
+@test "TAB_BAR_VISIBLE_LEN matches actual make_tab_bar visible width" {
+  local tab_bar
+  tab_bar=$(make_tab_bar session)
+  # Strip ANSI escape sequences to get visible characters
+  local stripped
+  stripped=$(printf '%s' "$tab_bar" | sed $'s/\x1b\[[0-9;]*m//g')
+  local actual_len=${#stripped}
+  [ "$actual_len" -eq "$TAB_BAR_VISIBLE_LEN" ]
+}
+
+# --- validate_name ---
+
+@test "validate_name: valid session name succeeds" {
+  run validate_name "my-project" "session"
+  [ "$status" -eq 0 ]
+}
+
+@test "validate_name: session name with dot fails" {
+  run validate_name "my.project" "session"
+  [ "$status" -eq 1 ]
+}
+
+@test "validate_name: session name with colon fails" {
+  run validate_name "my:project" "session"
+  [ "$status" -eq 1 ]
+}
+
+@test "validate_name: window name with dot fails" {
+  run validate_name "bad.name" "window"
+  [ "$status" -eq 1 ]
+}
+
+@test "validate_name: pane name with dot is allowed" {
+  run validate_name "title.with.dots" "pane"
+  [ "$status" -eq 0 ]
+}
+
+@test "validate_name: slash in session name is allowed" {
+  run validate_name "org/project" "session"
+  [ "$status" -eq 0 ]
+}

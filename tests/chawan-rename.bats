@@ -53,6 +53,11 @@ teardown() {
   [ ! -s "$MOCK_TMUX_CALLS" ]
 }
 
+@test "chawan-rename.sh: whitespace-only input skips rename" {
+  echo "   " | "$RENAME_SCRIPT" session "my-session"
+  [ ! -s "$MOCK_TMUX_CALLS" ]
+}
+
 # --- tmux forbidden characters ---
 
 @test "chawan-rename.sh: session rename rejects name containing dot" {

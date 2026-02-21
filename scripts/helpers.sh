@@ -62,3 +62,18 @@ make_tab_bar() {
   [[ "$active" == "pane" ]] && p="${hl}${p}${rs}"
   printf ' %s  %s  %s' "$s" "$w" "$p"
 }
+
+# Visible character width of make_tab_bar output (excluding ANSI escapes).
+# Must be updated if make_tab_bar format changes.
+export TAB_BAR_VISIBLE_LEN=28
+
+# Validates name for forbidden characters based on mode.
+# Session and window names reject '.' and ':' characters.
+# Returns 0 on valid, 1 on invalid (with error message to stderr).
+validate_name() {
+  local name="$1" mode="$2"
+  if [[ ("$mode" == "session" || "$mode" == "window") && "$name" == *[.:]* ]]; then
+    echo "Error: name cannot contain '.' or ':'" >&2
+    return 1
+  fi
+}

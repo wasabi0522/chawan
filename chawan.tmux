@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -20,7 +21,13 @@ main() {
 
   local key
   key=$(get_tmux_option "@chawan-key" "S")
+  if [[ ! "$key" =~ ^[a-zA-Z0-9][-a-zA-Z0-9]*$ ]]; then
+    display_message "chawan: invalid key binding: $key"
+    return 1
+  fi
 
-  tmux bind-key "$key" run-shell -b "$CURRENT_DIR/scripts/chawan-main.sh"
+  local escaped_main
+  printf -v escaped_main '%q' "$CURRENT_DIR/scripts/chawan-main.sh"
+  tmux bind-key "$key" run-shell -b "$escaped_main"
 }
 main

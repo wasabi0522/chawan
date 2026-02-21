@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck source=scripts/helpers.sh
+source "$CURRENT_DIR/helpers.sh"
+
 main() {
   local mode="${1:-}"
   local target="${2:-}"
@@ -9,14 +14,11 @@ main() {
       local name
       read -rp "New session name: " name
 
-      # Empty input: skip
-      [[ -z "$name" ]] && return 0
+      # Empty or whitespace-only input: cancel
+      [[ "$name" =~ ^[[:space:]]*$ ]] && return 0
 
-      # Forbidden characters: . and :
-      if [[ "$name" == *[.:]* ]]; then
-        echo "Error: session name cannot contain '.' or ':'" >&2
-        return 1
-      fi
+      # Validate forbidden characters
+      validate_name "$name" "session" || return 1
 
       # Duplicate check
       if tmux has-session -t "=$name" 2>/dev/null; then
@@ -45,5 +47,6 @@ main() {
 
 # Only run when executed directly, not when sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  set -euo pipefail
   main "$@"
 fi

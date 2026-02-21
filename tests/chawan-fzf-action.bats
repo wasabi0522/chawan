@@ -178,6 +178,27 @@ setup() {
   echo "$output" | grep -qF "chawan-create.sh window ${escaped}"
 }
 
+@test "delete: target with dollar sign is shell-escaped" {
+  run main delete 'a$b'
+  local escaped
+  printf -v escaped '%q' 'a$b'
+  echo "$output" | grep -qF "chawan-action.sh delete session ${escaped}"
+}
+
+@test "rename: target with backtick is shell-escaped" {
+  run main rename 'a`b'
+  local escaped
+  printf -v escaped '%q' 'a`b'
+  echo "$output" | grep -qF "chawan-rename.sh session ${escaped}"
+}
+
+@test "delete: target with single quote is shell-escaped" {
+  run main delete "a'b"
+  local escaped
+  printf -v escaped '%q' "a'b"
+  echo "$output" | grep -qF "chawan-action.sh delete session ${escaped}"
+}
+
 # --- next_mode / prev_mode default case ---
 
 @test "next_mode: unknown input defaults to session (returns window)" {

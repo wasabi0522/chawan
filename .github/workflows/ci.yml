@@ -1,41 +1,51 @@
 name: CI
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install shfmt
-        run: |
-          go install mvdan.cc/sh/v3/cmd/shfmt@latest
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - uses: mfinelli/setup-shfmt@a25fda4c1fe115aec0f85e04126610841bc3141d # v4.0.1
       - name: Lint
         run: make lint
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y bats
+      - uses: bats-core/bats-action@77d6fb60505b4d0d1d73e48bd035b55074bbfb43 # 4.0.0
+        with:
+          support-install: false
+          assert-install: false
+          detik-install: false
+          file-install: false
       - name: Run tests
         run: bats tests/
   coverage:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y bats
-          sudo gem install bashcov
+      - uses: bats-core/bats-action@77d6fb60505b4d0d1d73e48bd035b55074bbfb43 # 4.0.0
+        with:
+          support-install: false
+          assert-install: false
+          detik-install: false
+          file-install: false
+      - name: Install bashcov
+        run: sudo gem install bashcov
       - name: Run coverage
         run: make coverage
       - name: Coverage summary
+        if: always()
         run: |
+          if [[ ! -f coverage/.resultset.json ]]; then
+            echo "::warning::Coverage results not found"
+            exit 0
+          fi
           jq -r '
-            to_entries[0].value.coverage | to_entries |
+            to_entries | map(select(.value.coverage != null)) | first | .value.coverage | to_entries |
             map({
               file: (.key | ltrimstr(env.GITHUB_WORKSPACE + "/")),
               total: ([.value[] | select(. != null)] | length),

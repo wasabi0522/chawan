@@ -66,12 +66,14 @@ compute_header_width() {
   local term_width popup_cols
   term_width=$(tmux display-message -p '#{client_width}')
 
-  if [[ "$popup_w" == *% ]]; then
-    popup_cols=$((term_width * ${popup_w%\%} / 100))
+  local raw_value="${popup_w%\%}"
+  if [[ ! "$raw_value" =~ ^[0-9]+$ ]]; then
+    popup_cols=80
+  elif [[ "$popup_w" == *% ]]; then
+    popup_cols=$((term_width * raw_value / 100))
   else
-    popup_cols=$popup_w
+    popup_cols=$raw_value
   fi
-  [[ "$popup_cols" =~ ^[0-9]+$ ]] || popup_cols=80
 
   # 8 = fzf border + padding (4 left + 4 right)
   local fzf_chrome=8
@@ -94,9 +96,9 @@ build_headers() {
   local hint="${dim}Tab/S-Tab: switch${rs_ansi}"
 
   # Visible character widths (excluding ANSI escape sequences):
-  #   make_tab_bar output: " [Session]  [Window]  [Pane]" = 28 chars
+  #   make_tab_bar output: defined by TAB_BAR_VISIBLE_LEN in helpers.sh
   #   hint text: "Tab/S-Tab: switch" = 17 chars
-  local tab_visible_len=28 hint_visible_len=17
+  local tab_visible_len=$TAB_BAR_VISIBLE_LEN hint_visible_len=17
   local gap=$((header_width - tab_visible_len - hint_visible_len))
   ((gap < 2)) && gap=2
 
@@ -150,7 +152,7 @@ main() {
   # Launch fzf (enter:accept outputs selected line; other actions handled by chawan-fzf-action.sh)
   # fzf exits 0 on selection, 1 on no match, 130 on abort (esc/ctrl-c)
   local selected fzf_exit=0
-  selected=$(echo "$initial_list" | fzf --tmux "center,${popup_width},${popup_height}" \
+  selected=$(fzf --tmux "center,${popup_width},${popup_height}" \
     --layout reverse --header-first \
     --border rounded --border-label ' chawan ' \
     --header "$initial_header" --header-border line \
@@ -169,7 +171,8 @@ main() {
     --bind "click-header:transform:$ESCAPED_SCRIPTS_DIR/chawan-fzf-action.sh click-header \$FZF_CLICK_HEADER_WORD" \
     --bind "${bind_delete}:transform:$ESCAPED_SCRIPTS_DIR/chawan-fzf-action.sh delete {1}" \
     --bind "${bind_new}:transform:$ESCAPED_SCRIPTS_DIR/chawan-fzf-action.sh new {1}" \
-    --bind "${bind_rename}:transform:$ESCAPED_SCRIPTS_DIR/chawan-fzf-action.sh rename {1}") || fzf_exit=$?
+    --bind "${bind_rename}:transform:$ESCAPED_SCRIPTS_DIR/chawan-fzf-action.sh rename {1}" \
+    <<<"$initial_list") || fzf_exit=$?
   # Exit silently on user abort (1=no match, 130=esc/ctrl-c); propagate unexpected errors
   if [[ $fzf_exit -ne 0 && $fzf_exit -ne 1 && $fzf_exit -ne 130 ]]; then
     return "$fzf_exit"
@@ -186,5 +189,6 @@ main() {
 
 # Only run when executed directly, not when sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  set -euo pipefail
   main
 fi

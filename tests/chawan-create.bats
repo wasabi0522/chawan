@@ -75,6 +75,17 @@ teardown() {
 
 # --- session mode: forbidden characters ---
 
+@test "chawan-create: session mode with whitespace-only input does nothing" {
+  echo "   " | "$CREATE_SCRIPT" session
+  status=$?
+  [ "$status" -eq 0 ]
+
+  # No tmux calls should have been made
+  [ ! -s "$MOCK_TMUX_CALLS" ]
+}
+
+# --- session mode: forbidden characters ---
+
 @test "chawan-create: session mode rejects name containing dot" {
   local exit_status=0
   echo "my.project" | "$CREATE_SCRIPT" session 2>/dev/null || exit_status=$?

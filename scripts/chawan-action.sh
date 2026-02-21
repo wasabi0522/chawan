@@ -39,27 +39,27 @@ main() {
             display_message "Cannot delete current session: $target"
             return 0
           fi
-          tmux kill-session -t "=$target" 2>/dev/null
+          tmux kill-session -t "=$target" 2>/dev/null || true
           ;;
         window)
           local win_session="${target%%:*}"
           local win_count
-          win_count=$(tmux list-windows -t "=$win_session" 2>/dev/null | wc -l)
+          win_count=$(tmux list-windows -t "=$win_session" 2>/dev/null | wc -l) || win_count=0
           if ((win_count <= 1)); then
             display_message "Cannot delete last window in session: $win_session"
             return 0
           fi
-          tmux kill-window -t "=$target" 2>/dev/null
+          tmux kill-window -t "=$target" 2>/dev/null || true
           ;;
         pane)
           local pane_window="${target%%.*}"
           local pane_count
-          pane_count=$(tmux list-panes -t "=$pane_window" 2>/dev/null | wc -l)
+          pane_count=$(tmux list-panes -t "=$pane_window" 2>/dev/null | wc -l) || pane_count=0
           if ((pane_count <= 1)); then
             display_message "Cannot delete last pane in window: $pane_window"
             return 0
           fi
-          tmux kill-pane -t "=$target" 2>/dev/null
+          tmux kill-pane -t "=$target" 2>/dev/null || true
           ;;
       esac
       ;;
@@ -68,5 +68,6 @@ main() {
 
 # Only run when executed directly, not when sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  set -euo pipefail
   main "$@"
 fi
