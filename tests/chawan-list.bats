@@ -133,7 +133,7 @@ EOF
 
 @test "chawan-list window: first line is column header" {
   cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
-prezto:0	0	zsh	1	~/dotfiles
+prezto:0	0	zsh	1
 EOF
 
   run "$CHAWAN_LIST" window
@@ -145,13 +145,12 @@ EOF
   [[ "$display" == *"ID"* ]]
   [[ "$display" == *"NAME"* ]]
   [[ "$display" == *"PANE"* ]]
-  [[ "$display" == *"PATH"* ]]
 }
 
 @test "chawan-list window: formats list-windows output correctly" {
   cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
-prezto:0	0	zsh	1	~/dotfiles
-prezto:1	0	vim	2	~/projects
+prezto:0	0	zsh	1
+prezto:1	0	vim	2
 EOF
 
   run "$CHAWAN_LIST" window
@@ -163,9 +162,9 @@ EOF
 
 @test "chawan-list window: active window in attached session gets * marker" {
   cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
-prezto:0	0	zsh	1	~/dotfiles
-my-project:0	1	vim	1	~/ghq/chawan
-my-project:1	0	zsh	2	~/ghq/chawan
+prezto:0	0	zsh	1
+my-project:0	1	vim	1
+my-project:1	0	zsh	2
 EOF
 
   run "$CHAWAN_LIST" window
@@ -180,7 +179,7 @@ EOF
 
 @test "chawan-list window: output is ID<tab>display two-field format" {
   cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
-prezto:0	0	zsh	1	~/dotfiles
+prezto:0	0	zsh	1
 EOF
 
   run "$CHAWAN_LIST" window
@@ -190,20 +189,19 @@ EOF
   [ "$tab_count" -eq 2 ]
 }
 
-@test "chawan-list window: displays pane count and path" {
+@test "chawan-list window: displays pane count" {
   cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
-prezto:0	0	zsh	3	~/dotfiles
+prezto:0	0	zsh	3
 EOF
 
   run "$CHAWAN_LIST" window
   [ "$status" -eq 0 ]
   [[ "${lines[1]}" == *"3p"* ]]
-  [[ "${lines[1]}" == *"~/dotfiles"* ]]
 }
 
 @test "chawan-list window: displays window name" {
   cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
-prezto:0	0	vim	1	~/projects
+prezto:0	0	vim	1
 EOF
 
   run "$CHAWAN_LIST" window
@@ -213,8 +211,8 @@ EOF
 
 @test "chawan-list window: display portion contains no literal backslash-t" {
   cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
-prezto:0	0	zsh	1	~/dotfiles
-prezto:1	0	vim	2	~/projects
+prezto:0	0	zsh	1
+prezto:1	0	vim	2
 EOF
 
   run "$CHAWAN_LIST" window
@@ -351,9 +349,9 @@ EOF
 @test "chawan-list window: mru sort orders by activity descending" {
   export CHAWAN_SORT=mru
   cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
-alpha:0	0	zsh	1	~/a	1000
-beta:0	0	vim	2	~/b	3000
-gamma:0	0	zsh	1	~/c	2000
+alpha:0	0	zsh	1	1000
+beta:0	0	vim	2	3000
+gamma:0	0	zsh	1	2000
 EOF
 
   run "$CHAWAN_LIST" window
@@ -398,9 +396,9 @@ EOF
 @test "chawan-list window: name sort orders by window name" {
   export CHAWAN_SORT=name
   cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
-sess:0	0	zsh	1	~/a	1000
-sess:1	0	bash	2	~/b	3000
-sess:2	0	vim	1	~/c	2000
+sess:0	0	zsh	1	1000
+sess:1	0	bash	2	3000
+sess:2	0	vim	1	2000
 EOF
 
   run "$CHAWAN_LIST" window

@@ -39,14 +39,14 @@ main() {
       ;;
     window)
       # Column header
-      printf '\t   %-25.25s  %-15.15s  %-4s  %s\n' "ID" "NAME" "PANE" "PATH"
-      # tmux fields: sess:idx, active(1/0), name, pane_count, path, activity, fmt_name(15)
+      printf '\t   %-25.25s  %-15.15s  %s\n' "ID" "NAME" "PANE"
+      # tmux fields: sess:idx, active(1/0), name, pane_count, activity, fmt_name(15)
       tmux list-windows -a \
-        -F "#{session_name}:#{window_index}${sep}#{?window_active,#{?session_attached,1,0},0}${sep}#{window_name}${sep}#{window_panes}${sep}#{s|$HOME|~|:pane_current_path}${sep}#{window_activity}${sep}#{p15:#{=15:window_name}}" |
+        -F "#{session_name}:#{window_index}${sep}#{?window_active,#{?session_attached,1,0},0}${sep}#{window_name}${sep}#{window_panes}${sep}#{window_activity}${sep}#{p15:#{=15:window_name}}" |
         awk -F'\t' "$_AWK_LALIGN"'{
           m  = ($2 == "1") ? "*" : " "
-          fn = ($7 != "") ? $7 : lalign($3, 15)
-          printf "%s\t%s  %s  %s  %sp  %s\t%s\t%s\n", $1, m, lalign($1, 25), fn, $4, $5, $3, $6
+          fn = ($6 != "") ? $6 : lalign($3, 15)
+          printf "%s\t%s  %s  %s  %sp\t%s\t%s\n", $1, m, lalign($1, 25), fn, $4, $3, $5
         }' | _apply_sort
       ;;
     pane)
