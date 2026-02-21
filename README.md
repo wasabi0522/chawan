@@ -1,6 +1,6 @@
 <div align="center">
 
-# chawan
+# 🍚 chawan — **C**ompact **H**ub for **A**ll tmux session, **W**indow, **A**nd pane **N**avigation
 
 **Manage tmux sessions, windows, and panes in a single popup**
 
