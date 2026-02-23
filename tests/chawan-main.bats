@@ -364,7 +364,7 @@ _mock_fzf() {
           *) echo "" ;;
         esac
         ;;
-      list-panes) echo "main:0.0	0	bash	80x24	~/code" ;;
+      list-panes) echo "main:0.0	0	main:0.0	bash	80x24	1000" ;;
     esac
   }
   export -f tmux
@@ -555,7 +555,7 @@ _mock_fzf() {
           *) echo "" ;;
         esac
         ;;
-      list-panes) echo "main:0.0	0	bash	zsh	80x24" ;;
+      list-panes) echo "main:0.0	0	main:0.0	zsh	80x24	1000" ;;
     esac
   }
   export -f tmux

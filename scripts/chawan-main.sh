@@ -132,6 +132,7 @@ main() {
 
   local header_width
   header_width=$(compute_header_width "$popup_width" "$preview_enabled" "$preview_position")
+  export CHAWAN_COLS="$header_width"
   build_headers "$header_width"
 
   # Determine initial header
