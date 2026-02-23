@@ -7,10 +7,12 @@ setup() {
   mock_tmux_record_only
 
   PREVIEW_SCRIPT="$PROJECT_ROOT/scripts/chawan-preview.sh"
+  PREVIEW_OUT="$(mktemp)"
 }
 
 teardown() {
   teardown_mocks
+  rm -f "$PREVIEW_OUT"
 }
 
 # --- session target (no colon) ---
@@ -59,4 +61,66 @@ teardown() {
 
   # MOCK_TMUX_CALLS file should be empty (no tmux calls)
   [ ! -s "$MOCK_TMUX_CALLS" ]
+}
+
+# --- trailing blank line stripping ---
+# NOTE: Use file-based output checking (not bats "run") because bash command
+# substitution strips trailing newlines, making it impossible to verify
+# trailing blank lines were actually removed.
+
+@test "chawan-preview.sh: strips trailing blank lines from output" {
+  tmux() {
+    printf '%s\n' "$*" >>"$MOCK_TMUX_CALLS"
+    if [[ "$1" == "capture-pane" ]]; then
+      printf 'line1\nline2\n\n\n\n'
+    fi
+  }
+  export -f tmux
+
+  "$PREVIEW_SCRIPT" "my-project" >"$PREVIEW_OUT"
+  [ "$(wc -l <"$PREVIEW_OUT")" -eq 2 ]
+  [ "$(sed -n '1p' "$PREVIEW_OUT")" = "line1" ]
+  [ "$(sed -n '2p' "$PREVIEW_OUT")" = "line2" ]
+}
+
+@test "chawan-preview.sh: strips trailing lines with only ANSI sequences" {
+  MOCK_ESC=$'\033'
+  export MOCK_ESC
+  tmux() {
+    printf '%s\n' "$*" >>"$MOCK_TMUX_CALLS"
+    if [[ "$1" == "capture-pane" ]]; then
+      printf 'content\n%s[0m\n\n' "$MOCK_ESC"
+    fi
+  }
+  export -f tmux
+
+  "$PREVIEW_SCRIPT" "my-project" >"$PREVIEW_OUT"
+  [ "$(wc -l <"$PREVIEW_OUT")" -eq 1 ]
+  [ "$(sed -n '1p' "$PREVIEW_OUT")" = "content" ]
+}
+
+@test "chawan-preview.sh: preserves all lines when no trailing blanks" {
+  tmux() {
+    printf '%s\n' "$*" >>"$MOCK_TMUX_CALLS"
+    if [[ "$1" == "capture-pane" ]]; then
+      printf 'line1\nline2\nline3\n'
+    fi
+  }
+  export -f tmux
+
+  "$PREVIEW_SCRIPT" "my-project" >"$PREVIEW_OUT"
+  [ "$(wc -l <"$PREVIEW_OUT")" -eq 3 ]
+}
+
+@test "chawan-preview.sh: all-blank output produces no output" {
+  tmux() {
+    printf '%s\n' "$*" >>"$MOCK_TMUX_CALLS"
+    if [[ "$1" == "capture-pane" ]]; then
+      printf '\n\n\n\n'
+    fi
+  }
+  export -f tmux
+
+  "$PREVIEW_SCRIPT" "my-project" >"$PREVIEW_OUT"
+  [ ! -s "$PREVIEW_OUT" ]
 }
