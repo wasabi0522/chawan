@@ -178,7 +178,7 @@ main() {
     --header-lines 1 \
     --with-nth '2..' --delimiter '\t' \
     --bind 'esc:abort' \
-    --bind "result:pos($current_pos)" \
+    --bind "result:pos($current_pos)+unbind(result)" \
     --bind "tab:transform:$ESCAPED_SCRIPTS_DIR/chawan-fzf-action.sh tab {1}" \
     --bind "shift-tab:transform:$ESCAPED_SCRIPTS_DIR/chawan-fzf-action.sh shift-tab {1}" \
     --bind "click-header:transform:$ESCAPED_SCRIPTS_DIR/chawan-fzf-action.sh click-header \$FZF_CLICK_HEADER_WORD" \
