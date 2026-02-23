@@ -267,14 +267,14 @@ _mock_fzf() {
   [ "$status" -eq 0 ]
 }
 
-@test "main: preview window includes scroll-to-bottom offset" {
+@test "main: preview window includes follow for scroll-to-bottom" {
   _mock_tmux_default
   _mock_fzf
 
   run main
   [ "$status" -eq 0 ]
 
-  run grep "+99999" "$FZF_ARGS_FILE"
+  run grep "follow" "$FZF_ARGS_FILE"
   [ "$status" -eq 0 ]
 }
 
