@@ -464,3 +464,78 @@ EOF
   [ "$status" -eq 0 ]
   [ -z "$output" ]
 }
+
+# --- distribute_widths ---
+
+@test "distribute_widths: all columns fit within equal share" {
+  source "$CHAWAN_LIST"
+  run distribute_widths 60 5 10 15
+  [ "$status" -eq 0 ]
+  [ "$output" = "5 10 15" ]
+}
+
+@test "distribute_widths: some columns need truncation" {
+  source "$CHAWAN_LIST"
+  run distribute_widths 60 5 30 50
+  [ "$status" -eq 0 ]
+  # Pass1: share=20, col0(5<=20) fixed=5, remaining=55
+  # Pass2: share=27, col1(30>27) unfixed, col2(50>27) unfixed
+  # Final: col1=27, col2=27+1=28
+  [ "$output" = "5 27 28" ]
+}
+
+@test "distribute_widths: zero available returns all zeros" {
+  source "$CHAWAN_LIST"
+  run distribute_widths 0 10 20
+  [ "$status" -eq 0 ]
+  [ "$output" = "0 0" ]
+}
+
+@test "distribute_widths: negative available returns all zeros" {
+  source "$CHAWAN_LIST"
+  run distribute_widths -5 10 20
+  [ "$status" -eq 0 ]
+  [ "$output" = "0 0" ]
+}
+
+@test "distribute_widths: single column gets all available" {
+  source "$CHAWAN_LIST"
+  run distribute_widths 40 100
+  [ "$status" -eq 0 ]
+  [ "$output" = "40" ]
+}
+
+@test "distribute_widths: single column fits within available" {
+  source "$CHAWAN_LIST"
+  run distribute_widths 40 10
+  [ "$status" -eq 0 ]
+  [ "$output" = "10" ]
+}
+
+# --- CHAWAN_COLS dynamic width ---
+
+@test "chawan-list session: CHAWAN_COLS controls column width" {
+  export CHAWAN_COLS=40
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+short	0	2
+EOF
+
+  run "$CHAWAN_LIST" session
+  [ "$status" -eq 0 ]
+  [[ "${lines[1]}" == short$'\t'* ]]
+  [[ "${lines[1]}" == *"2w"* ]]
+}
+
+@test "chawan-list session: narrow CHAWAN_COLS truncates long name" {
+  export CHAWAN_COLS=20
+  cat >"$MOCK_TMUX_OUTPUT" <<'EOF'
+very-long-session-name-here	0	2
+EOF
+
+  run "$CHAWAN_LIST" session
+  [ "$status" -eq 0 ]
+  # Name should be truncated but still present as ID
+  local id
+  id="$(echo "${lines[1]}" | cut -f1)"
+  [ "$id" = "very-long-session-name-here" ]
+}
