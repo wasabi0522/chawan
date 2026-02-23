@@ -267,6 +267,17 @@ _mock_fzf() {
   [ "$status" -eq 0 ]
 }
 
+@test "main: preview window includes scroll-to-bottom offset" {
+  _mock_tmux_default
+  _mock_fzf
+
+  run main
+  [ "$status" -eq 0 ]
+
+  run grep "+99999" "$FZF_ARGS_FILE"
+  [ "$status" -eq 0 ]
+}
+
 @test "main: preview disabled omits --preview flag" {
   tmux() {
     echo "$@" >>"$MOCK_TMUX_CALLS"
