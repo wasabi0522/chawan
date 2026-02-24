@@ -153,7 +153,7 @@ main() {
   if [[ "$preview_enabled" == "on" ]]; then
     preview_opts=(
       --preview "$ESCAPED_SCRIPTS_DIR/chawan-preview.sh {1}"
-      --preview-window "${preview_position},border-left,follow"
+      --preview-window "${preview_position},border-line,follow"
       --preview-label ''
       --bind 'focus:transform-preview-label:echo " Preview: {2} "'
     )

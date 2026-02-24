@@ -633,3 +633,14 @@ _mock_fzf() {
   run main
   [ "$status" -eq 2 ]
 }
+
+@test "main: preview window uses border-line for separator" {
+  _mock_tmux_default
+  _mock_fzf
+
+  run main
+  [ "$status" -eq 0 ]
+
+  run grep "border-line" "$FZF_ARGS_FILE"
+  [ "$status" -eq 0 ]
+}
