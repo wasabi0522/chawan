@@ -63,54 +63,39 @@ compute_header_width() {
     popup_cols=$raw_value
   fi
 
-  # 12 = tmux popup border (1+1) + fzf border + internal spacing (5+5)
-  # Subtracted before preview split because fzf divides the content area, not the popup.
-  local fzf_chrome=12
-  local content_width=$((popup_cols - fzf_chrome))
+  # 10 = fzf border + padding (4 left + 4 right) + tmux popup border (1 left + 1 right)
+  local fzf_chrome=10
   if [[ "$preview_on" == "on" && "$preview_pos" =~ ^(left|right) ]]; then
     local preview_pct=50
     if [[ "$preview_pos" =~ ([0-9]+)% ]]; then
       preview_pct="${BASH_REMATCH[1]}"
     fi
-    echo $((content_width * (100 - preview_pct) / 100))
+    echo $((popup_cols * (100 - preview_pct) / 100 - fzf_chrome))
   else
-    echo "$content_width"
+    echo $((popup_cols - fzf_chrome))
   fi
 }
 
-# Builds a single header line with right-aligned "Tab/S-Tab: switch mode" hint.
-# Called from within fzf via transform-header, where $FZF_COLUMNS provides the
-# terminal width of the popup. We subtract fzf's own border, padding, and
-# internal margins to get the actual renderable header width.
-build_header_line() {
-  local mode="$1" width="${2:-80}"
-  # $FZF_COLUMNS is the popup terminal width (inside tmux border).
-  # Subtract fzf's border (2), border-to-content spacing (2), pointer area (2),
-  # scrollbar area (2), and additional internal margins.
-  local fzf_header_chrome=16
-  width=$((width - fzf_header_chrome))
-  local dim=$'\e[2m' rs=$'\e[0m'
-  local hint="${dim}Tab/S-Tab: switch mode${rs}"
-  local tab_bar
-  tab_bar=$(make_tab_bar "$mode")
-  local gap=$((width - TAB_BAR_VISIBLE_LEN - 22))
-  if ((gap < 2)); then
-    # Not enough room for right-aligned hint; show tab bar only
-    printf '%s' "$tab_bar"
-    return
-  fi
+# Generates and exports HEADER_SESSION, HEADER_WINDOW, HEADER_PANE with
+# right-aligned Tab/S-Tab hint.
+build_headers() {
+  local header_width="$1"
+  local dim=$'\e[2m' rs_ansi=$'\e[0m'
+  local hint="${dim}Tab/S-Tab: switch mode${rs_ansi}"
+
+  # Visible character widths (excluding ANSI escape sequences):
+  #   make_tab_bar output: defined by TAB_BAR_VISIBLE_LEN in helpers.sh
+  #   hint text: "Tab/S-Tab: switch mode" = 22 chars
+  local tab_visible_len=$TAB_BAR_VISIBLE_LEN hint_visible_len=22
+  local gap=$((header_width - tab_visible_len - hint_visible_len))
+  ((gap < 2)) && gap=2
+
   local padding
   printf -v padding '%*s' "$gap" ""
-  printf '%s%s%s' "$tab_bar" "$padding" "$hint"
-}
 
-# Generates and exports HEADER_SESSION, HEADER_WINDOW, HEADER_PANE
-# containing only the tab bar (used as initial --header before
-# start:transform-header replaces it with the right-aligned version).
-build_headers() {
-  HEADER_SESSION="$(make_tab_bar session)"
-  HEADER_WINDOW="$(make_tab_bar window)"
-  HEADER_PANE="$(make_tab_bar pane)"
+  HEADER_SESSION="$(make_tab_bar session)${padding}${hint}"
+  HEADER_WINDOW="$(make_tab_bar window)${padding}${hint}"
+  HEADER_PANE="$(make_tab_bar pane)${padding}${hint}"
   export HEADER_SESSION HEADER_WINDOW HEADER_PANE
 }
 
@@ -148,7 +133,7 @@ main() {
   local header_width
   header_width=$(compute_header_width "$popup_width" "$preview_enabled" "$preview_position")
   export CHAWAN_COLS="$header_width"
-  build_headers
+  build_headers "$header_width"
 
   # Determine initial header
   local initial_header
@@ -194,7 +179,6 @@ main() {
     --header-lines 1 \
     --with-nth '2..' --delimiter '\t' \
     --bind 'esc:abort' \
-    --bind "start:transform-header:$ESCAPED_SCRIPTS_DIR/chawan-main.sh --header $default_mode \$FZF_COLUMNS" \
     --bind "result:pos($current_pos)+unbind(result)" \
     --bind "tab:transform:$ESCAPED_SCRIPTS_DIR/chawan-fzf-action.sh tab {1}" \
     --bind "shift-tab:transform:$ESCAPED_SCRIPTS_DIR/chawan-fzf-action.sh shift-tab {1}" \
@@ -220,10 +204,5 @@ main() {
 # Only run when executed directly, not when sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   set -euo pipefail
-  if [[ "${1:-}" == "--header" ]]; then
-    # Called from fzf transform-header: output right-aligned header line
-    build_header_line "$2" "${3:-80}"
-  else
-    main "$@"
-  fi
+  main "$@"
 fi
