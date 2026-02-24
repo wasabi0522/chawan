@@ -163,24 +163,19 @@ teardown() {
 
 # --- build_headers ---
 
-@test "build_headers: exports three header variables with tab bar and hint" {
+@test "build_headers: exports three header variables with tab bar only" {
   build_headers
   [[ -n "$HEADER_SESSION" ]]
   [[ "$HEADER_SESSION" == *"Session"* ]]
-  [[ "$HEADER_SESSION" == *"Tab/S-Tab: switch mode"* ]]
   [[ -n "$HEADER_WINDOW" ]]
   [[ "$HEADER_WINDOW" == *"Window"* ]]
   [[ -n "$HEADER_PANE" ]]
   [[ "$HEADER_PANE" == *"Pane"* ]]
 }
 
-@test "build_headers: uses fixed gap between tab bar and hint" {
+@test "build_headers: hint is not embedded in header (moved to header-border-label)" {
   build_headers
-  # Tab bar ends, then 5 spaces, then the dim hint
-  # Verify the structure: tab bar + gap + hint (no width-dependent padding)
-  [[ "$HEADER_SESSION" == *"Session"*"Tab/S-Tab: switch mode"* ]]
-  [[ "$HEADER_WINDOW" == *"Window"*"Tab/S-Tab: switch mode"* ]]
-  [[ "$HEADER_PANE" == *"Pane"*"Tab/S-Tab: switch mode"* ]]
+  [[ "$HEADER_SESSION" != *"Tab/S-Tab"* ]]
 }
 
 # --- build_footer ---

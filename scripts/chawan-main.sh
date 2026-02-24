@@ -78,17 +78,13 @@ compute_header_width() {
   fi
 }
 
-# Generates and exports HEADER_SESSION, HEADER_WINDOW, HEADER_PANE with
-# Tab/S-Tab hint separated by a fixed gap.
-# Uses a fixed gap instead of computed right-alignment to avoid dependence
-# on fzf's internal chrome width, which varies by version and configuration.
+# Generates and exports HEADER_SESSION, HEADER_WINDOW, HEADER_PANE
+# containing only the tab bar. The "Tab/S-Tab: switch mode" hint is
+# displayed separately via fzf's --header-border-label (right-aligned).
 build_headers() {
-  local dim=$'\e[2m' rs_ansi=$'\e[0m'
-  local hint="${dim}Tab/S-Tab: switch mode${rs_ansi}"
-
-  HEADER_SESSION="$(make_tab_bar session)     ${hint}"
-  HEADER_WINDOW="$(make_tab_bar window)     ${hint}"
-  HEADER_PANE="$(make_tab_bar pane)     ${hint}"
+  HEADER_SESSION="$(make_tab_bar session)"
+  HEADER_WINDOW="$(make_tab_bar window)"
+  HEADER_PANE="$(make_tab_bar pane)"
   export HEADER_SESSION HEADER_WINDOW HEADER_PANE
 }
 
@@ -162,7 +158,10 @@ main() {
   selected=$(fzf --tmux "center,${popup_width},${popup_height},border-native" \
     --layout reverse --header-first \
     --border rounded --border-label ' chawan ' \
-    --header "$initial_header" --header-border line \
+    --header "$initial_header" \
+    --header-border line \
+    --header-border-label ' Tab/S-Tab: switch mode ' \
+    --header-border-label-pos right \
     --footer "$footer" \
     --prompt '> ' \
     --ansi --highlight-line --info right \
