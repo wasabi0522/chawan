@@ -79,25 +79,16 @@ compute_header_width() {
 }
 
 # Generates and exports HEADER_SESSION, HEADER_WINDOW, HEADER_PANE with
-# right-aligned Tab/S-Tab hint.
+# Tab/S-Tab hint separated by a fixed gap.
+# Uses a fixed gap instead of computed right-alignment to avoid dependence
+# on fzf's internal chrome width, which varies by version and configuration.
 build_headers() {
-  local header_width="$1"
   local dim=$'\e[2m' rs_ansi=$'\e[0m'
   local hint="${dim}Tab/S-Tab: switch mode${rs_ansi}"
 
-  # Visible character widths (excluding ANSI escape sequences):
-  #   make_tab_bar output: defined by TAB_BAR_VISIBLE_LEN in helpers.sh
-  #   hint text: "Tab/S-Tab: switch mode" = 22 chars
-  local tab_visible_len=$TAB_BAR_VISIBLE_LEN hint_visible_len=22
-  local gap=$((header_width - tab_visible_len - hint_visible_len))
-  ((gap < 2)) && gap=2
-
-  local padding
-  printf -v padding '%*s' "$gap" ""
-
-  HEADER_SESSION="$(make_tab_bar session)${padding}${hint}"
-  HEADER_WINDOW="$(make_tab_bar window)${padding}${hint}"
-  HEADER_PANE="$(make_tab_bar pane)${padding}${hint}"
+  HEADER_SESSION="$(make_tab_bar session)     ${hint}"
+  HEADER_WINDOW="$(make_tab_bar window)     ${hint}"
+  HEADER_PANE="$(make_tab_bar pane)     ${hint}"
   export HEADER_SESSION HEADER_WINDOW HEADER_PANE
 }
 
@@ -135,7 +126,7 @@ main() {
   local header_width
   header_width=$(compute_header_width "$popup_width" "$preview_enabled" "$preview_position")
   export CHAWAN_COLS="$header_width"
-  build_headers "$header_width"
+  build_headers
 
   # Determine initial header
   local initial_header
