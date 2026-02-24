@@ -181,6 +181,7 @@ teardown() {
 # --- build_header_line ---
 
 @test "build_header_line: includes tab bar and right-aligned hint" {
+  # width=80 minus chrome(16) = 64 usable; enough for tab(28)+gap+hint(22)
   run build_header_line "session" 80
   [ "$status" -eq 0 ]
   [[ "$output" == *"Session"* ]]
@@ -189,17 +190,18 @@ teardown() {
 
 @test "build_header_line: wider width produces more padding" {
   local narrow wide
-  narrow=$(build_header_line "session" 60)
-  wide=$(build_header_line "session" 120)
+  narrow=$(build_header_line "session" 80)
+  wide=$(build_header_line "session" 160)
   # Wide output should be longer due to more padding
   (( ${#wide} > ${#narrow} ))
 }
 
-@test "build_header_line: narrow width uses minimum gap of 2" {
-  run build_header_line "session" 10
+@test "build_header_line: narrow width hides hint when space insufficient" {
+  # width=30 minus chrome(16) = 14; too small for tab(28)+hint(22), hint hidden
+  run build_header_line "session" 30
   [ "$status" -eq 0 ]
   [[ "$output" == *"Session"* ]]
-  [[ "$output" == *"Tab/S-Tab: switch mode"* ]]
+  [[ "$output" != *"Tab/S-Tab"* ]]
 }
 
 # --- build_footer ---

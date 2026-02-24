@@ -80,15 +80,25 @@ compute_header_width() {
 
 # Builds a single header line with right-aligned "Tab/S-Tab: switch mode" hint.
 # Called from within fzf via transform-header, where $FZF_COLUMNS provides the
-# actual finder area width—eliminating the need to estimate fzf's internal chrome.
+# terminal width of the popup. We subtract fzf's own border, padding, and
+# internal margins to get the actual renderable header width.
 build_header_line() {
   local mode="$1" width="${2:-80}"
+  # $FZF_COLUMNS is the popup terminal width (inside tmux border).
+  # Subtract fzf's border (2), border-to-content spacing (2), pointer area (2),
+  # scrollbar area (2), and additional internal margins.
+  local fzf_header_chrome=16
+  width=$((width - fzf_header_chrome))
   local dim=$'\e[2m' rs=$'\e[0m'
   local hint="${dim}Tab/S-Tab: switch mode${rs}"
   local tab_bar
   tab_bar=$(make_tab_bar "$mode")
   local gap=$((width - TAB_BAR_VISIBLE_LEN - 22))
-  ((gap < 2)) && gap=2
+  if ((gap < 2)); then
+    # Not enough room for right-aligned hint; show tab bar only
+    printf '%s' "$tab_bar"
+    return
+  fi
   local padding
   printf -v padding '%*s' "$gap" ""
   printf '%s%s%s' "$tab_bar" "$padding" "$hint"
