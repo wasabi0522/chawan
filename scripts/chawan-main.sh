@@ -49,7 +49,7 @@ build_footer() {
 # Computes the available header width (visible columns) for the finder area,
 # accounting for popup size, preview pane, and fzf border/padding.
 compute_header_width() {
-  local popup_w="$1" preview_on="$2" preview_pos="$3"
+  local popup_w="$1" preview_on="$2"
   local popup_cols
 
   local raw_value="${popup_w%\%}"
@@ -65,12 +65,8 @@ compute_header_width() {
 
   # 10 = fzf border + padding (4 left + 4 right) + tmux popup border (1 left + 1 right)
   local fzf_chrome=10
-  if [[ "$preview_on" == "on" && "$preview_pos" =~ ^(left|right) ]]; then
-    local preview_pct=50
-    if [[ "$preview_pos" =~ ([0-9]+)% ]]; then
-      preview_pct="${BASH_REMATCH[1]}"
-    fi
-    echo $((popup_cols * (100 - preview_pct) / 100 - fzf_chrome))
+  if [[ "$preview_on" == "on" ]]; then
+    echo $((popup_cols * 50 / 100 - fzf_chrome))
   else
     echo $((popup_cols - fzf_chrome))
   fi
@@ -102,7 +98,7 @@ build_headers() {
 main() {
   local arg_mode="${1:-}"
   local default_mode popup_width popup_height
-  local preview_enabled preview_position
+  local preview_enabled
   local bind_new bind_delete bind_rename sort_mode
 
   default_mode=$(normalize_mode "$(get_tmux_option "@chawan-default-mode" "session")")
@@ -114,7 +110,6 @@ main() {
   popup_width=$(get_tmux_option "@chawan-popup-width" "80%")
   popup_height=$(get_tmux_option "@chawan-popup-height" "70%")
   preview_enabled=$(get_tmux_option "@chawan-preview" "on")
-  preview_position=$(get_tmux_option "@chawan-preview-position" "right,50%")
   bind_new=$(get_tmux_option "@chawan-bind-new" "ctrl-o")
   bind_delete=$(get_tmux_option "@chawan-bind-delete" "ctrl-d")
   bind_rename=$(get_tmux_option "@chawan-bind-rename" "ctrl-r")
@@ -131,7 +126,7 @@ main() {
   done
 
   local header_width
-  header_width=$(compute_header_width "$popup_width" "$preview_enabled" "$preview_position")
+  header_width=$(compute_header_width "$popup_width" "$preview_enabled")
   export CHAWAN_COLS="$header_width"
   build_headers "$header_width"
 
@@ -153,7 +148,7 @@ main() {
   if [[ "$preview_enabled" == "on" ]]; then
     preview_opts=(
       --preview "$ESCAPED_SCRIPTS_DIR/chawan-preview.sh {1}"
-      --preview-window "${preview_position},border-left,follow"
+      --preview-window "right,50%,border-left,follow"
       --preview-label ''
       --bind 'focus:transform-preview-label:echo " Preview: {2} "'
     )

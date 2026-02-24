@@ -113,13 +113,13 @@ teardown() {
 
 # --- compute_header_width ---
 
-@test "compute_header_width: percentage popup with right preview" {
+@test "compute_header_width: percentage popup with preview on" {
   tmux() {
     if [[ "$1" == "display-message" ]]; then echo "200"; fi
   }
   export -f tmux
 
-  run compute_header_width "80%" "on" "right,50%"
+  run compute_header_width "80%" "on"
   [ "$status" -eq 0 ]
   # 200 * 80/100 = 160 cols, 160 * 50/100 - 10 = 70
   [ "$output" = "70" ]
@@ -131,22 +131,10 @@ teardown() {
   }
   export -f tmux
 
-  run compute_header_width "120" "off" "right,50%"
+  run compute_header_width "120" "off"
   [ "$status" -eq 0 ]
   # 120 - 10 = 110
   [ "$output" = "110" ]
-}
-
-@test "compute_header_width: up/down preview uses full width" {
-  tmux() {
-    if [[ "$1" == "display-message" ]]; then echo "200"; fi
-  }
-  export -f tmux
-
-  run compute_header_width "80%" "on" "up,50%"
-  [ "$status" -eq 0 ]
-  # 200 * 80/100 = 160, full width: 160 - 10 = 150
-  [ "$output" = "150" ]
 }
 
 @test "compute_header_width: non-numeric popup defaults to 80" {
@@ -155,7 +143,7 @@ teardown() {
   }
   export -f tmux
 
-  run compute_header_width "abc" "off" "right,50%"
+  run compute_header_width "abc" "off"
   [ "$status" -eq 0 ]
   # fallback 80 - 10 = 70
   [ "$output" = "70" ]
@@ -610,16 +598,16 @@ _mock_fzf() {
   [ "$status" -eq 0 ]
 }
 
-@test "compute_header_width: custom preview percentage (30%)" {
+@test "compute_header_width: percentage popup with preview off uses full width" {
   tmux() {
     if [[ "$1" == "display-message" ]]; then echo "200"; fi
   }
   export -f tmux
 
-  run compute_header_width "80%" "on" "right,30%"
+  run compute_header_width "80%" "off"
   [ "$status" -eq 0 ]
-  # 200 * 80/100 = 160 cols, 160 * 70/100 - 10 = 102
-  [ "$output" = "102" ]
+  # 200 * 80/100 = 160, full width: 160 - 10 = 150
+  [ "$output" = "150" ]
 }
 
 @test "main: fzf unexpected exit code is propagated" {
