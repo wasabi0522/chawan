@@ -78,9 +78,25 @@ compute_header_width() {
   fi
 }
 
+# Builds a single header line with right-aligned "Tab/S-Tab: switch mode" hint.
+# Called from within fzf via transform-header, where $FZF_COLUMNS provides the
+# actual finder area width—eliminating the need to estimate fzf's internal chrome.
+build_header_line() {
+  local mode="$1" width="${2:-80}"
+  local dim=$'\e[2m' rs=$'\e[0m'
+  local hint="${dim}Tab/S-Tab: switch mode${rs}"
+  local tab_bar
+  tab_bar=$(make_tab_bar "$mode")
+  local gap=$((width - TAB_BAR_VISIBLE_LEN - 22))
+  ((gap < 2)) && gap=2
+  local padding
+  printf -v padding '%*s' "$gap" ""
+  printf '%s%s%s' "$tab_bar" "$padding" "$hint"
+}
+
 # Generates and exports HEADER_SESSION, HEADER_WINDOW, HEADER_PANE
-# containing only the tab bar. The "Tab/S-Tab: switch mode" hint is
-# displayed separately via fzf's --header-border-label (right-aligned).
+# containing only the tab bar (used as initial --header before
+# start:transform-header replaces it with the right-aligned version).
 build_headers() {
   HEADER_SESSION="$(make_tab_bar session)"
   HEADER_WINDOW="$(make_tab_bar window)"
@@ -158,10 +174,7 @@ main() {
   selected=$(fzf --tmux "center,${popup_width},${popup_height},border-native" \
     --layout reverse --header-first \
     --border rounded --border-label ' chawan ' \
-    --header "$initial_header" \
-    --header-border line \
-    --header-border-label ' Tab/S-Tab: switch mode ' \
-    --header-border-label-pos right \
+    --header "$initial_header" --header-border line \
     --footer "$footer" \
     --prompt '> ' \
     --ansi --highlight-line --info right \
@@ -171,6 +184,7 @@ main() {
     --header-lines 1 \
     --with-nth '2..' --delimiter '\t' \
     --bind 'esc:abort' \
+    --bind "start:transform-header:$ESCAPED_SCRIPTS_DIR/chawan-main.sh --header $default_mode \$FZF_COLUMNS" \
     --bind "result:pos($current_pos)+unbind(result)" \
     --bind "tab:transform:$ESCAPED_SCRIPTS_DIR/chawan-fzf-action.sh tab {1}" \
     --bind "shift-tab:transform:$ESCAPED_SCRIPTS_DIR/chawan-fzf-action.sh shift-tab {1}" \
@@ -196,5 +210,10 @@ main() {
 # Only run when executed directly, not when sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   set -euo pipefail
-  main "$@"
+  if [[ "${1:-}" == "--header" ]]; then
+    # Called from fzf transform-header: output right-aligned header line
+    build_header_line "$2" "${3:-80}"
+  else
+    main "$@"
+  fi
 fi

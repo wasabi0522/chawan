@@ -27,17 +27,16 @@ prev_mode() {
   esac
 }
 
-# Generates the fzf action string for switching to a given mode
+# Generates the fzf action string for switching to a given mode.
+# Uses transform-header to dynamically build the right-aligned header
+# using $FZF_COLUMNS for the actual finder area width.
 switch_to_mode() {
   local mode="$1"
-  local header_var
   case "$mode" in
-    session) header_var="$HEADER_SESSION" ;;
-    window) header_var="$HEADER_WINDOW" ;;
-    pane) header_var="$HEADER_PANE" ;;
+    session | window | pane) ;;
     *) return ;;
   esac
-  echo "reload($ESCAPED_SCRIPTS_DIR/chawan-list.sh $mode)+change-prompt(> )+change-header(${header_var})+first"
+  echo "reload($ESCAPED_SCRIPTS_DIR/chawan-list.sh $mode)+change-prompt(> )+transform-header($ESCAPED_SCRIPTS_DIR/chawan-main.sh --header $mode \$FZF_COLUMNS)+first"
 }
 
 main() {

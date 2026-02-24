@@ -173,9 +173,33 @@ teardown() {
   [[ "$HEADER_PANE" == *"Pane"* ]]
 }
 
-@test "build_headers: hint is not embedded in header (moved to header-border-label)" {
+@test "build_headers: hint is not embedded in header (deferred to transform-header)" {
   build_headers
   [[ "$HEADER_SESSION" != *"Tab/S-Tab"* ]]
+}
+
+# --- build_header_line ---
+
+@test "build_header_line: includes tab bar and right-aligned hint" {
+  run build_header_line "session" 80
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Session"* ]]
+  [[ "$output" == *"Tab/S-Tab: switch mode"* ]]
+}
+
+@test "build_header_line: wider width produces more padding" {
+  local narrow wide
+  narrow=$(build_header_line "session" 60)
+  wide=$(build_header_line "session" 120)
+  # Wide output should be longer due to more padding
+  (( ${#wide} > ${#narrow} ))
+}
+
+@test "build_header_line: narrow width uses minimum gap of 2" {
+  run build_header_line "session" 10
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Session"* ]]
+  [[ "$output" == *"Tab/S-Tab: switch mode"* ]]
 }
 
 # --- build_footer ---
@@ -618,6 +642,19 @@ _mock_fzf() {
   [ "$status" -eq 0 ]
   # 200 * 80/100 = 160 cols, (160 - 12) * 70/100 = 103
   [ "$output" = "103" ]
+}
+
+@test "main: start binding uses transform-header with FZF_COLUMNS" {
+  _mock_tmux_default
+  _mock_fzf
+
+  run main
+  [ "$status" -eq 0 ]
+
+  run grep "start:transform-header:" "$FZF_ARGS_FILE"
+  [ "$status" -eq 0 ]
+  [[ "${lines[0]}" == *"chawan-main.sh --header session"* ]]
+  [[ "${lines[0]}" == *'$FZF_COLUMNS'* ]]
 }
 
 @test "main: fzf unexpected exit code is propagated" {
