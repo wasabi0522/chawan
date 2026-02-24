@@ -153,87 +153,12 @@ teardown() {
   [[ "$output" == *"bind-key F "* ]]
 }
 
-# --- mode-specific keybindings ---
-
-@test "chawan.tmux: binds window key when @chawan-key-window is set" {
-  tmux() {
-    echo "$@" >>"$MOCK_TMUX_CALLS"
-    case "$1" in
-      -V) echo "tmux 3.4" ;;
-      show-option)
-        if [[ "$3" == "@chawan-key-window" ]]; then
-          echo "W"
-        else
-          echo ""
-        fi
-        ;;
-    esac
-  }
-  export -f tmux
-
+@test "chawan.tmux: only one bind-key call is made" {
   run "$CHAWAN_TMUX"
   [ "$status" -eq 0 ]
 
   run cat "$MOCK_TMUX_CALLS"
-  [[ "$output" == *"bind-key W run-shell -b"* ]]
-  [[ "$output" == *"window"* ]]
-}
-
-@test "chawan.tmux: binds pane key when @chawan-key-pane is set" {
-  tmux() {
-    echo "$@" >>"$MOCK_TMUX_CALLS"
-    case "$1" in
-      -V) echo "tmux 3.4" ;;
-      show-option)
-        if [[ "$3" == "@chawan-key-pane" ]]; then
-          echo "P"
-        else
-          echo ""
-        fi
-        ;;
-    esac
-  }
-  export -f tmux
-
-  run "$CHAWAN_TMUX"
-  [ "$status" -eq 0 ]
-
-  run cat "$MOCK_TMUX_CALLS"
-  [[ "$output" == *"bind-key P run-shell -b"* ]]
-  [[ "$output" == *"pane"* ]]
-}
-
-@test "chawan.tmux: skips window/pane binding when not configured" {
-  run "$CHAWAN_TMUX"
-  [ "$status" -eq 0 ]
-
-  run cat "$MOCK_TMUX_CALLS"
-  # Only the default S key binding should be present
   local bind_count
   bind_count=$(grep -c "bind-key" "$MOCK_TMUX_CALLS")
   [ "$bind_count" -eq 1 ]
-}
-
-@test "chawan.tmux: error when @chawan-key-window is invalid" {
-  tmux() {
-    echo "$@" >>"$MOCK_TMUX_CALLS"
-    case "$1" in
-      -V) echo "tmux 3.4" ;;
-      show-option)
-        if [[ "$3" == "@chawan-key-window" ]]; then
-          echo '!@#'
-        else
-          echo ""
-        fi
-        ;;
-    esac
-  }
-  export -f tmux
-
-  run "$CHAWAN_TMUX"
-  [ "$status" -eq 1 ]
-
-  run cat "$MOCK_TMUX_CALLS"
-  [[ "$output" == *"display-message"* ]]
-  [[ "$output" == *"invalid key binding"* ]]
 }

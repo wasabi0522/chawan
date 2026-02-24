@@ -83,14 +83,11 @@ Defaults work out of the box — no configuration required.
 | Option | Default | Description |
 |--------|---------|-------------|
 | `@chawan-key` | `S` | Trigger key after prefix |
-| `@chawan-key-window` | *(none)* | Direct window mode trigger key |
-| `@chawan-key-pane` | *(none)* | Direct pane mode trigger key |
 | `@chawan-default-mode` | `session` | Initial mode (`session` / `window` / `pane`) |
 | `@chawan-sort` | `default` | Sort order (`default` / `mru` / `name`) |
 | `@chawan-popup-width` | `80%` | Popup width |
 | `@chawan-popup-height` | `70%` | Popup height |
 | `@chawan-preview` | `on` | Preview pane (`on` / `off`) |
-| `@chawan-preview-position` | `right,50%` | Preview position and size |
 | `@chawan-bind-new` | `ctrl-o` | Keybinding for create |
 | `@chawan-bind-delete` | `ctrl-d` | Keybinding for delete |
 | `@chawan-bind-rename` | `ctrl-r` | Keybinding for rename |
@@ -104,10 +101,6 @@ set -g @plugin 'wasabi0522/chawan'
 # Open with prefix + T instead of prefix + S
 set -g @chawan-key 'T'
 
-# Direct mode keybindings (prefix + W for windows, prefix + P for panes)
-set -g @chawan-key-window 'W'
-set -g @chawan-key-pane 'P'
-
 # Start in window mode
 set -g @chawan-default-mode 'window'
 
@@ -117,9 +110,6 @@ set -g @chawan-sort 'mru'
 # Larger popup
 set -g @chawan-popup-width '90%'
 set -g @chawan-popup-height '80%'
-
-# Preview at the bottom
-set -g @chawan-preview-position 'bottom,40%'
 ```
 
 </details>
