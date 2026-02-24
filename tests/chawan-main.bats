@@ -121,8 +121,8 @@ teardown() {
 
   run compute_header_width "80%" "on" "right,50%"
   [ "$status" -eq 0 ]
-  # 200 * 80/100 = 160 cols, (160 - 12) * 50/100 = 74
-  [ "$output" = "74" ]
+  # 200 * 80/100 = 160 cols, 160 * 50/100 - 10 = 70
+  [ "$output" = "70" ]
 }
 
 @test "compute_header_width: absolute popup without preview" {
@@ -133,8 +133,8 @@ teardown() {
 
   run compute_header_width "120" "off" "right,50%"
   [ "$status" -eq 0 ]
-  # 120 - 12 = 108
-  [ "$output" = "108" ]
+  # 120 - 10 = 110
+  [ "$output" = "110" ]
 }
 
 @test "compute_header_width: up/down preview uses full width" {
@@ -145,8 +145,8 @@ teardown() {
 
   run compute_header_width "80%" "on" "up,50%"
   [ "$status" -eq 0 ]
-  # 200 * 80/100 = 160, full width: 160 - 12 = 148
-  [ "$output" = "148" ]
+  # 200 * 80/100 = 160, full width: 160 - 10 = 150
+  [ "$output" = "150" ]
 }
 
 @test "compute_header_width: non-numeric popup defaults to 80" {
@@ -157,51 +157,27 @@ teardown() {
 
   run compute_header_width "abc" "off" "right,50%"
   [ "$status" -eq 0 ]
-  # fallback 80 - 12 = 68
-  [ "$output" = "68" ]
+  # fallback 80 - 10 = 70
+  [ "$output" = "70" ]
 }
 
 # --- build_headers ---
 
-@test "build_headers: exports three header variables with tab bar only" {
-  build_headers
+@test "build_headers: exports three header variables with tab bar and hint" {
+  build_headers 80
   [[ -n "$HEADER_SESSION" ]]
   [[ "$HEADER_SESSION" == *"Session"* ]]
+  [[ "$HEADER_SESSION" == *"Tab/S-Tab: switch mode"* ]]
   [[ -n "$HEADER_WINDOW" ]]
   [[ "$HEADER_WINDOW" == *"Window"* ]]
   [[ -n "$HEADER_PANE" ]]
   [[ "$HEADER_PANE" == *"Pane"* ]]
 }
 
-@test "build_headers: hint is not embedded in header (deferred to transform-header)" {
-  build_headers
-  [[ "$HEADER_SESSION" != *"Tab/S-Tab"* ]]
-}
-
-# --- build_header_line ---
-
-@test "build_header_line: includes tab bar and right-aligned hint" {
-  # width=80 minus chrome(16) = 64 usable; enough for tab(28)+gap+hint(22)
-  run build_header_line "session" 80
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"Session"* ]]
-  [[ "$output" == *"Tab/S-Tab: switch mode"* ]]
-}
-
-@test "build_header_line: wider width produces more padding" {
-  local narrow wide
-  narrow=$(build_header_line "session" 80)
-  wide=$(build_header_line "session" 160)
-  # Wide output should be longer due to more padding
-  (( ${#wide} > ${#narrow} ))
-}
-
-@test "build_header_line: narrow width hides hint when space insufficient" {
-  # width=30 minus chrome(16) = 14; too small for tab(28)+hint(22), hint hidden
-  run build_header_line "session" 30
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"Session"* ]]
-  [[ "$output" != *"Tab/S-Tab"* ]]
+@test "build_headers: narrow width uses minimum gap of 2" {
+  build_headers 10
+  [[ -n "$HEADER_SESSION" ]]
+  [[ "$HEADER_SESSION" == *"Session"* ]]
 }
 
 # --- build_footer ---
@@ -642,21 +618,8 @@ _mock_fzf() {
 
   run compute_header_width "80%" "on" "right,30%"
   [ "$status" -eq 0 ]
-  # 200 * 80/100 = 160 cols, (160 - 12) * 70/100 = 103
-  [ "$output" = "103" ]
-}
-
-@test "main: start binding uses transform-header with FZF_COLUMNS" {
-  _mock_tmux_default
-  _mock_fzf
-
-  run main
-  [ "$status" -eq 0 ]
-
-  run grep "start:transform-header:" "$FZF_ARGS_FILE"
-  [ "$status" -eq 0 ]
-  [[ "${lines[0]}" == *"chawan-main.sh --header session"* ]]
-  [[ "${lines[0]}" == *'$FZF_COLUMNS'* ]]
+  # 200 * 80/100 = 160 cols, 160 * 70/100 - 10 = 102
+  [ "$output" = "102" ]
 }
 
 @test "main: fzf unexpected exit code is propagated" {

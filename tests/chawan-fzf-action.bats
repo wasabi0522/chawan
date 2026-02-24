@@ -45,7 +45,7 @@ setup() {
 @test "tab: from session (plain ID) switches to window" {
   run main tab "mysess"
   [[ "$output" == *"chawan-list.sh window"* ]]
-  [[ "$output" == *"transform-header("* ]]
+  [[ "$output" == *"change-header"* ]]
 }
 
 @test "tab: from window (colon ID) switches to pane" {
@@ -238,10 +238,10 @@ setup() {
   [ -z "$output" ]
 }
 
-@test "switch_to_mode: includes reload, change-prompt, transform-header, first" {
+@test "switch_to_mode: includes reload, change-prompt, change-header, first" {
   run switch_to_mode "session"
   [[ "$output" == "reload("* ]]
   [[ "$output" == *"change-prompt(> )"* ]]
-  [[ "$output" == *"transform-header("*"chawan-main.sh --header session"* ]]
+  [[ "$output" == *"change-header("* ]]
   [[ "$output" == *"+first" ]]
 }
