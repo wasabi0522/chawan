@@ -121,8 +121,8 @@ teardown() {
 
   run compute_header_width "80%" "on" "right,50%"
   [ "$status" -eq 0 ]
-  # 200 * 80/100 = 160 cols, 160 * 50/100 - 10 = 70
-  [ "$output" = "70" ]
+  # 200 * 80/100 = 160 cols, (160 - 12) * 50/100 = 74
+  [ "$output" = "74" ]
 }
 
 @test "compute_header_width: absolute popup without preview" {
@@ -133,8 +133,8 @@ teardown() {
 
   run compute_header_width "120" "off" "right,50%"
   [ "$status" -eq 0 ]
-  # 120 - 10 = 110
-  [ "$output" = "110" ]
+  # 120 - 12 = 108
+  [ "$output" = "108" ]
 }
 
 @test "compute_header_width: up/down preview uses full width" {
@@ -145,8 +145,8 @@ teardown() {
 
   run compute_header_width "80%" "on" "up,50%"
   [ "$status" -eq 0 ]
-  # 200 * 80/100 = 160, full width: 160 - 10 = 150
-  [ "$output" = "150" ]
+  # 200 * 80/100 = 160, full width: 160 - 12 = 148
+  [ "$output" = "148" ]
 }
 
 @test "compute_header_width: non-numeric popup defaults to 80" {
@@ -157,8 +157,8 @@ teardown() {
 
   run compute_header_width "abc" "off" "right,50%"
   [ "$status" -eq 0 ]
-  # fallback 80 - 10 = 70
-  [ "$output" = "70" ]
+  # fallback 80 - 12 = 68
+  [ "$output" = "68" ]
 }
 
 # --- build_headers ---
@@ -618,8 +618,8 @@ _mock_fzf() {
 
   run compute_header_width "80%" "on" "right,30%"
   [ "$status" -eq 0 ]
-  # 200 * 80/100 = 160 cols, 160 * 70/100 - 10 = 102
-  [ "$output" = "102" ]
+  # 200 * 80/100 = 160 cols, (160 - 12) * 70/100 = 103
+  [ "$output" = "103" ]
 }
 
 @test "main: fzf unexpected exit code is propagated" {

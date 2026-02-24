@@ -63,16 +63,18 @@ compute_header_width() {
     popup_cols=$raw_value
   fi
 
-  # 10 = fzf border + padding (4 left + 4 right) + tmux popup border (1 left + 1 right)
-  local fzf_chrome=10
+  # 12 = tmux popup border (1+1) + fzf border + internal spacing (5+5)
+  # Subtracted before preview split because fzf divides the content area, not the popup.
+  local fzf_chrome=12
+  local content_width=$((popup_cols - fzf_chrome))
   if [[ "$preview_on" == "on" && "$preview_pos" =~ ^(left|right) ]]; then
     local preview_pct=50
     if [[ "$preview_pos" =~ ([0-9]+)% ]]; then
       preview_pct="${BASH_REMATCH[1]}"
     fi
-    echo $((popup_cols * (100 - preview_pct) / 100 - fzf_chrome))
+    echo $((content_width * (100 - preview_pct) / 100))
   else
-    echo $((popup_cols - fzf_chrome))
+    echo "$content_width"
   fi
 }
 
