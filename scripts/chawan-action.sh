@@ -43,12 +43,37 @@ main() {
           fi
           ;;
         window)
+          local current_session
+          current_session=$(tmux display-message -p '#S')
+          local target_session="${target%%:*}"
+          if [[ "$target_session" == "$current_session" ]]; then
+            local win_count
+            win_count=$(tmux list-windows -t "=$target_session" -F '.' | wc -l)
+            if ((win_count <= 1)); then
+              tmux switch-client -l 2>/dev/null || tmux switch-client -n 2>/dev/null || true
+            fi
+          fi
           local _err
           if ! _err=$(tmux kill-window -t "=$target" 2>&1); then
             display_message "chawan: ${_err:-delete failed}" 2>/dev/null || true
           fi
           ;;
         pane)
+          local current_session
+          current_session=$(tmux display-message -p '#S')
+          local target_session="${target%%:*}"
+          if [[ "$target_session" == "$current_session" ]]; then
+            local target_window="${target%.*}"
+            local pane_count
+            pane_count=$(tmux list-panes -t "=$target_window" -F '.' | wc -l)
+            if ((pane_count <= 1)); then
+              local win_count
+              win_count=$(tmux list-windows -t "=$target_session" -F '.' | wc -l)
+              if ((win_count <= 1)); then
+                tmux switch-client -l 2>/dev/null || tmux switch-client -n 2>/dev/null || true
+              fi
+            fi
+          fi
           local _err
           if ! _err=$(tmux kill-pane -t "=$target" 2>&1); then
             display_message "chawan: ${_err:-delete failed}" 2>/dev/null || true
