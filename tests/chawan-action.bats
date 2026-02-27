@@ -205,46 +205,286 @@ teardown() {
 
 # --- delete window ---
 
-@test "chawan-action: delete window calls kill-window" {
+@test "chawan-action: delete window in different session calls kill-window" {
+  MOCK_DISPLAY_MESSAGE="other-session"
+  export MOCK_DISPLAY_MESSAGE
+
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete window "my-project:2"
   [ "$status" -eq 0 ]
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "kill-window -t =my-project:2" ]
-  [ "${#lines[@]}" -eq 1 ]
+  [ "${lines[0]}" = "display-message -p #S" ]
+  [ "${lines[1]}" = "kill-window -t =my-project:2" ]
+  [ "${#lines[@]}" -eq 2 ]
+}
+
+@test "chawan-action: delete window in current session with multiple windows" {
+  MOCK_DISPLAY_MESSAGE="my-project"
+  export MOCK_DISPLAY_MESSAGE
+
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      display-message)
+        echo "$MOCK_DISPLAY_MESSAGE"
+        ;;
+      list-windows)
+        printf '.\n.\n'
+        ;;
+    esac
+  }
+  export -f tmux
+
+  run "$PROJECT_ROOT/scripts/chawan-action.sh" delete window "my-project:2"
+  [ "$status" -eq 0 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [ "${lines[0]}" = "display-message -p #S" ]
+  [ "${lines[1]}" = "list-windows -t =my-project -F ." ]
+  [ "${lines[2]}" = "kill-window -t =my-project:2" ]
+  [ "${#lines[@]}" -eq 3 ]
 }
 
 # --- delete last window ---
 
-@test "chawan-action: delete last window kills it (no safety guard)" {
+@test "chawan-action: delete last window in current session switches client then kills" {
+  MOCK_DISPLAY_MESSAGE="my-project"
+  export MOCK_DISPLAY_MESSAGE
+
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      display-message)
+        echo "$MOCK_DISPLAY_MESSAGE"
+        ;;
+      list-windows)
+        printf '.\n'
+        ;;
+    esac
+  }
+  export -f tmux
+
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete window "my-project:0"
   [ "$status" -eq 0 ]
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "kill-window -t =my-project:0" ]
-  [ "${#lines[@]}" -eq 1 ]
+  [ "${lines[0]}" = "display-message -p #S" ]
+  [ "${lines[1]}" = "list-windows -t =my-project -F ." ]
+  [ "${lines[2]}" = "switch-client -l" ]
+  [ "${lines[3]}" = "kill-window -t =my-project:0" ]
+  [ "${#lines[@]}" -eq 4 ]
+}
+
+@test "chawan-action: delete last window falls back to switch-client -n" {
+  MOCK_DISPLAY_MESSAGE="my-project"
+  export MOCK_DISPLAY_MESSAGE
+
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      display-message)
+        echo "$MOCK_DISPLAY_MESSAGE"
+        ;;
+      list-windows)
+        printf '.\n'
+        ;;
+      switch-client)
+        if [[ "$2" == "-l" ]]; then
+          return 1
+        fi
+        ;;
+    esac
+  }
+  export -f tmux
+
+  run "$PROJECT_ROOT/scripts/chawan-action.sh" delete window "my-project:0"
+  [ "$status" -eq 0 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [ "${lines[0]}" = "display-message -p #S" ]
+  [ "${lines[1]}" = "list-windows -t =my-project -F ." ]
+  [ "${lines[2]}" = "switch-client -l" ]
+  [ "${lines[3]}" = "switch-client -n" ]
+  [ "${lines[4]}" = "kill-window -t =my-project:0" ]
+  [ "${#lines[@]}" -eq 5 ]
 }
 
 # --- delete pane ---
 
-@test "chawan-action: delete pane calls kill-pane" {
+@test "chawan-action: delete pane in different session calls kill-pane" {
+  MOCK_DISPLAY_MESSAGE="other-session"
+  export MOCK_DISPLAY_MESSAGE
+
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my-project:2.1"
   [ "$status" -eq 0 ]
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "kill-pane -t =my-project:2.1" ]
-  [ "${#lines[@]}" -eq 1 ]
+  [ "${lines[0]}" = "display-message -p #S" ]
+  [ "${lines[1]}" = "kill-pane -t =my-project:2.1" ]
+  [ "${#lines[@]}" -eq 2 ]
 }
 
-# --- delete last pane ---
+@test "chawan-action: delete pane in current session with multiple panes" {
+  MOCK_DISPLAY_MESSAGE="my-project"
+  export MOCK_DISPLAY_MESSAGE
 
-@test "chawan-action: delete last pane kills it (no safety guard)" {
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      display-message)
+        echo "$MOCK_DISPLAY_MESSAGE"
+        ;;
+      list-panes)
+        printf '.\n.\n'
+        ;;
+    esac
+  }
+  export -f tmux
+
+  run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my-project:2.1"
+  [ "$status" -eq 0 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [ "${lines[0]}" = "display-message -p #S" ]
+  [ "${lines[1]}" = "list-panes -t =my-project:2 -F ." ]
+  [ "${lines[2]}" = "kill-pane -t =my-project:2.1" ]
+  [ "${#lines[@]}" -eq 3 ]
+}
+
+@test "chawan-action: delete last pane in current session with multiple windows" {
+  MOCK_DISPLAY_MESSAGE="my-project"
+  export MOCK_DISPLAY_MESSAGE
+
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      display-message)
+        echo "$MOCK_DISPLAY_MESSAGE"
+        ;;
+      list-panes)
+        printf '.\n'
+        ;;
+      list-windows)
+        printf '.\n.\n'
+        ;;
+    esac
+  }
+  export -f tmux
+
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my-project:2.0"
   [ "$status" -eq 0 ]
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "kill-pane -t =my-project:2.0" ]
-  [ "${#lines[@]}" -eq 1 ]
+  [ "${lines[0]}" = "display-message -p #S" ]
+  [ "${lines[1]}" = "list-panes -t =my-project:2 -F ." ]
+  [ "${lines[2]}" = "list-windows -t =my-project -F ." ]
+  [ "${lines[3]}" = "kill-pane -t =my-project:2.0" ]
+  [ "${#lines[@]}" -eq 4 ]
+}
+
+# --- delete last pane ---
+
+@test "chawan-action: delete last pane in last window switches client then kills" {
+  MOCK_DISPLAY_MESSAGE="my-project"
+  export MOCK_DISPLAY_MESSAGE
+
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      display-message)
+        echo "$MOCK_DISPLAY_MESSAGE"
+        ;;
+      list-panes)
+        printf '.\n'
+        ;;
+      list-windows)
+        printf '.\n'
+        ;;
+    esac
+  }
+  export -f tmux
+
+  run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my-project:2.0"
+  [ "$status" -eq 0 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [ "${lines[0]}" = "display-message -p #S" ]
+  [ "${lines[1]}" = "list-panes -t =my-project:2 -F ." ]
+  [ "${lines[2]}" = "list-windows -t =my-project -F ." ]
+  [ "${lines[3]}" = "switch-client -l" ]
+  [ "${lines[4]}" = "kill-pane -t =my-project:2.0" ]
+  [ "${#lines[@]}" -eq 5 ]
+}
+
+@test "chawan-action: delete last pane falls back to switch-client -n" {
+  MOCK_DISPLAY_MESSAGE="my-project"
+  export MOCK_DISPLAY_MESSAGE
+
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      display-message)
+        echo "$MOCK_DISPLAY_MESSAGE"
+        ;;
+      list-panes)
+        printf '.\n'
+        ;;
+      list-windows)
+        printf '.\n'
+        ;;
+      switch-client)
+        if [[ "$2" == "-l" ]]; then
+          return 1
+        fi
+        ;;
+    esac
+  }
+  export -f tmux
+
+  run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my-project:2.0"
+  [ "$status" -eq 0 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [ "${lines[0]}" = "display-message -p #S" ]
+  [ "${lines[1]}" = "list-panes -t =my-project:2 -F ." ]
+  [ "${lines[2]}" = "list-windows -t =my-project -F ." ]
+  [ "${lines[3]}" = "switch-client -l" ]
+  [ "${lines[4]}" = "switch-client -n" ]
+  [ "${lines[5]}" = "kill-pane -t =my-project:2.0" ]
+  [ "${#lines[@]}" -eq 6 ]
+}
+
+@test "chawan-action: delete pane with dot in session name extracts window correctly" {
+  MOCK_DISPLAY_MESSAGE="my.dotfiles"
+  export MOCK_DISPLAY_MESSAGE
+
+  tmux() {
+    echo "$@" >>"$MOCK_TMUX_CALLS"
+    case "$1" in
+      display-message)
+        echo "$MOCK_DISPLAY_MESSAGE"
+        ;;
+      list-panes)
+        printf '.\n'
+        ;;
+      list-windows)
+        printf '.\n'
+        ;;
+    esac
+  }
+  export -f tmux
+
+  run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my.dotfiles:0.1"
+  [ "$status" -eq 0 ]
+
+  run cat "$MOCK_TMUX_CALLS"
+  [ "${lines[0]}" = "display-message -p #S" ]
+  # ${target%.*} should correctly extract "my.dotfiles:0" (not "my")
+  [ "${lines[1]}" = "list-panes -t =my.dotfiles:0 -F ." ]
+  [ "${lines[2]}" = "list-windows -t =my.dotfiles -F ." ]
+  [ "${lines[3]}" = "switch-client -l" ]
+  [ "${lines[4]}" = "kill-pane -t =my.dotfiles:0.1" ]
+  [ "${#lines[@]}" -eq 5 ]
 }
 
 # --- unknown action ---
