@@ -38,6 +38,8 @@ jobs:
           file-install: false
       - name: Run tests
         run: make test
+        env:
+          BATS_LIB_PATH: /usr/lib
   coverage:
     needs: test
     runs-on: ubuntu-latest
@@ -62,6 +64,8 @@ jobs:
         run: echo "$HOME/gems/bin" >> "$GITHUB_PATH"
       - name: Run coverage
         run: make coverage
+        env:
+          BATS_LIB_PATH: /usr/lib
       - name: Coverage summary
         if: always()
         run: |

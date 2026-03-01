@@ -2,7 +2,7 @@
 BASH_FILES := scripts/*.sh chawan.tmux
 
 # --- 共通 ---
-BATS_LIB_PATH := $(CURDIR)/tests/libs
+BATS_LIB_PATH ?= $(CURDIR)/tests/libs
 export BATS_LIB_PATH
 
 .PHONY: test lint fmt coverage setup
