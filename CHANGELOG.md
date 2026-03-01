@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.0.3](https://github.com/wasabi0522/chawan/compare/v0.0.2...v0.0.3) - 2026-03-01
+- refactor: migrate test assertions to bats-support/bats-assert by @wasabi0522 in https://github.com/wasabi0522/chawan/pull/17
+
 ## [v0.0.2](https://github.com/wasabi0522/chawan/compare/v0.0.1...v0.0.2) - 2026-02-27
 - fix: prevent cursor position jump after deleting items by @wasabi0522 in https://github.com/wasabi0522/chawan/pull/7
 - Scroll live preview to bottom for latest terminal state by @wasabi0522 in https://github.com/wasabi0522/chawan/pull/9
