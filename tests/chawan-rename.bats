@@ -26,8 +26,8 @@ teardown() {
 @test "chawan-rename.sh: session mode calls rename-session with new name" {
   echo "new-session-name" | "$RENAME_SCRIPT" session "old-session"
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "has-session -t =new-session-name" ]
-  [ "${lines[1]}" = "rename-session -t =old-session new-session-name" ]
+  assert_line -n 0 "has-session -t =new-session-name"
+  assert_line -n 1 "rename-session -t =old-session new-session-name"
 }
 
 # --- window rename ---
@@ -110,9 +110,9 @@ teardown() {
   [ "$exit_code" -eq 1 ]
 
   run grep "has-session" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 0 ]
+  assert_success
   run grep "rename-session" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 1 ]
+  assert_failure
 }
 
 @test "chawan-rename.sh: session rename allows same name (no duplicate check)" {
@@ -127,10 +127,10 @@ teardown() {
   echo "same-session" | "$RENAME_SCRIPT" session "same-session"
 
   run grep "rename-session" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 0 ]
+  assert_success
   # has-session should NOT be called when new_name == target
   run grep "has-session" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 1 ]
+  assert_failure
 }
 
 # --- empty target safety guard ---

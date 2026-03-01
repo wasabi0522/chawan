@@ -39,11 +39,11 @@ teardown() {
   export -f tmux
 
   run "$CHAWAN_TMUX"
-  [ "$status" -eq 1 ]
+  assert_failure
 
   run cat "$MOCK_TMUX_CALLS"
-  [[ "$output" == *"display-message"* ]]
-  [[ "$output" == *"3.3"* ]]
+  assert_output --partial "display-message"
+  assert_output --partial "3.3"
 }
 
 # --- fzf not installed ---
@@ -64,11 +64,11 @@ teardown() {
   export -f command
 
   run "$CHAWAN_TMUX"
-  [ "$status" -eq 1 ]
+  assert_failure
 
   run cat "$MOCK_TMUX_CALLS"
-  [[ "$output" == *"display-message"* ]]
-  [[ "$output" == *"fzf"* ]]
+  assert_output --partial "display-message"
+  assert_output --partial "fzf"
 }
 
 # --- fzf version too old ---
@@ -77,31 +77,31 @@ teardown() {
   mock_fzf_available "0.62.0 (brew)"
 
   run "$CHAWAN_TMUX"
-  [ "$status" -eq 1 ]
+  assert_failure
 
   run cat "$MOCK_TMUX_CALLS"
-  [[ "$output" == *"display-message"* ]]
-  [[ "$output" == *"0.63"* ]]
+  assert_output --partial "display-message"
+  assert_output --partial "0.63"
 }
 
 # --- fzf OK: bind-key is called ---
 
 @test "chawan.tmux: bind-key is called when fzf is available" {
   run "$CHAWAN_TMUX"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [[ "$output" == *"bind-key"* ]]
+  assert_output --partial "bind-key"
 }
 
 # --- default key ---
 
 @test "chawan.tmux: uses default key S when @chawan-key is unset" {
   run "$CHAWAN_TMUX"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [[ "$output" == *"bind-key S "* ]]
+  assert_output --partial "bind-key S "
 }
 
 # --- custom key ---
@@ -123,11 +123,11 @@ teardown() {
   export -f tmux
 
   run "$CHAWAN_TMUX"
-  [ "$status" -eq 1 ]
+  assert_failure
 
   run cat "$MOCK_TMUX_CALLS"
-  [[ "$output" == *"display-message"* ]]
-  [[ "$output" == *"invalid key binding"* ]]
+  assert_output --partial "display-message"
+  assert_output --partial "invalid key binding"
 }
 
 @test "chawan.tmux: uses custom key F when @chawan-key is set" {
@@ -147,15 +147,15 @@ teardown() {
   export -f tmux
 
   run "$CHAWAN_TMUX"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [[ "$output" == *"bind-key F "* ]]
+  assert_output --partial "bind-key F "
 }
 
 @test "chawan.tmux: only one bind-key call is made" {
   run "$CHAWAN_TMUX"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
   local bind_count

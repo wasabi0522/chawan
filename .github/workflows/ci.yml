@@ -7,11 +7,20 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     env:
-      SHELLCHECK_VERSION: "0.10.0"
+      SHELLCHECK_VERSION: "0.11.0"
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: mfinelli/setup-shfmt@a25fda4c1fe115aec0f85e04126610841bc3141d # v4.0.1
+        with:
+          shfmt-version: 3.12.0
+      - name: Cache ShellCheck
+        id: cache-shellcheck
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: /usr/local/bin/shellcheck
+          key: shellcheck-${{ env.SHELLCHECK_VERSION }}
       - name: Install ShellCheck
+        if: steps.cache-shellcheck.outputs.cache-hit != 'true'
         run: |
           curl -sSL "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" | tar -xJ
           sudo cp "shellcheck-v${SHELLCHECK_VERSION}/shellcheck" /usr/local/bin/
@@ -20,11 +29,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: bats-core/bats-action@77d6fb60505b4d0d1d73e48bd035b55074bbfb43 # 4.0.0
         with:
-          support-install: false
-          assert-install: false
+          support-install: true
+          assert-install: true
           detik-install: false
           file-install: false
       - name: Run tests
@@ -35,15 +44,15 @@ jobs:
     env:
       GEM_HOME: ~/gems
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: bats-core/bats-action@77d6fb60505b4d0d1d73e48bd035b55074bbfb43 # 4.0.0
         with:
-          support-install: false
-          assert-install: false
+          support-install: true
+          assert-install: true
           detik-install: false
           file-install: false
       - name: Cache gems
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: ~/gems
           key: gems-bashcov-3.3.0

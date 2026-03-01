@@ -1,1 +1,6 @@
 coverage/
+tests/libs/
+.DS_Store
+*.swp
+*.swo
+*~
