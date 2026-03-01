@@ -22,7 +22,7 @@ prezto	0	3
 EOF
 
   run "$CHAWAN_LIST" session
-  [ "$status" -eq 0 ]
+  assert_success
   # Header line: empty ID + tab + column labels
   local id display
   id="$(echo "${lines[0]}" | cut -f1)"
@@ -39,7 +39,7 @@ dotfiles	0	1
 EOF
 
   run "$CHAWAN_LIST" session
-  [ "$status" -eq 0 ]
+  assert_success
   [ "${#lines[@]}" -eq 3 ]
   # Each line has ID<tab>display format (skip header at index 0)
   [[ "${lines[1]}" == prezto$'\t'"   "* ]]
@@ -53,12 +53,12 @@ my-project	1	2
 EOF
 
   run "$CHAWAN_LIST" session
-  [ "$status" -eq 0 ]
+  assert_success
   # Non-attached: space marker
   [[ "${lines[1]}" == prezto$'\t'" "* ]]
   # Attached: * marker and (attached) suffix
   [[ "${lines[2]}" == my-project$'\t'"*"* ]]
-  [[ "${lines[2]}" == *"(attached)"* ]]
+  assert_line -n 2 --partial "(attached)"
 }
 
 @test "chawan-list session: non-attached session has no (attached) suffix" {
@@ -67,8 +67,8 @@ prezto	0	3
 EOF
 
   run "$CHAWAN_LIST" session
-  [ "$status" -eq 0 ]
-  [[ "${lines[1]}" != *"(attached)"* ]]
+  assert_success
+  refute_line -n 1 --partial "(attached)"
 }
 
 @test "chawan-list session: output is ID<tab>display two-field format" {
@@ -77,7 +77,7 @@ prezto	0	3
 EOF
 
   run "$CHAWAN_LIST" session
-  [ "$status" -eq 0 ]
+  assert_success
   # Split by tab: should have exactly 2 fields (check data line, not header)
   local id display
   id="$(echo "${lines[1]}" | cut -f1)"
@@ -96,8 +96,8 @@ my-project	0	5
 EOF
 
   run "$CHAWAN_LIST" session
-  [ "$status" -eq 0 ]
-  [[ "${lines[1]}" == *"5w"* ]]
+  assert_success
+  assert_line -n 1 --partial "5w"
 }
 
 @test "chawan-list session: handles slash in session name" {
@@ -106,12 +106,12 @@ org/project	1	3
 EOF
 
   run "$CHAWAN_LIST" session
-  [ "$status" -eq 0 ]
+  assert_success
   local id
   id="$(echo "${lines[1]}" | cut -f1)"
   [ "$id" = "org/project" ]
-  [[ "${lines[1]}" == *"*"* ]]
-  [[ "${lines[1]}" == *"(attached)"* ]]
+  assert_line -n 1 --partial "*"
+  assert_line -n 1 --partial "(attached)"
 }
 
 @test "chawan-list session: display portion contains no literal backslash-t" {
@@ -121,7 +121,7 @@ dotfiles	1	1
 EOF
 
   run "$CHAWAN_LIST" session
-  [ "$status" -eq 0 ]
+  assert_success
   for line in "${lines[@]}"; do
     local display
     display="$(echo "$line" | cut -f2)"
@@ -137,7 +137,7 @@ prezto:0	0	zsh	1
 EOF
 
   run "$CHAWAN_LIST" window
-  [ "$status" -eq 0 ]
+  assert_success
   local id display
   id="$(echo "${lines[0]}" | cut -f1)"
   [ -z "$id" ]
@@ -154,7 +154,7 @@ prezto:1	0	vim	2
 EOF
 
   run "$CHAWAN_LIST" window
-  [ "$status" -eq 0 ]
+  assert_success
   [ "${#lines[@]}" -eq 3 ]
   [[ "${lines[1]}" == prezto:0$'\t'* ]]
   [[ "${lines[2]}" == prezto:1$'\t'* ]]
@@ -168,7 +168,7 @@ my-project:1	0	zsh	2
 EOF
 
   run "$CHAWAN_LIST" window
-  [ "$status" -eq 0 ]
+  assert_success
   # prezto:0 not active
   [[ "${lines[1]}" == prezto:0$'\t'" "* ]]
   # my-project:0 is active in attached session
@@ -183,7 +183,7 @@ prezto:0	0	zsh	1
 EOF
 
   run "$CHAWAN_LIST" window
-  [ "$status" -eq 0 ]
+  assert_success
   local tab_count
   tab_count="$(echo "${lines[1]}" | awk -F'\t' '{print NF}')"
   [ "$tab_count" -eq 2 ]
@@ -195,8 +195,8 @@ prezto:0	0	zsh	3
 EOF
 
   run "$CHAWAN_LIST" window
-  [ "$status" -eq 0 ]
-  [[ "${lines[1]}" == *"3p"* ]]
+  assert_success
+  assert_line -n 1 --partial "3p"
 }
 
 @test "chawan-list window: displays window name" {
@@ -205,8 +205,8 @@ prezto:0	0	vim	1
 EOF
 
   run "$CHAWAN_LIST" window
-  [ "$status" -eq 0 ]
-  [[ "${lines[1]}" == *"vim"* ]]
+  assert_success
+  assert_line -n 1 --partial "vim"
 }
 
 @test "chawan-list window: display portion contains no literal backslash-t" {
@@ -216,7 +216,7 @@ prezto:1	0	vim	2
 EOF
 
   run "$CHAWAN_LIST" window
-  [ "$status" -eq 0 ]
+  assert_success
   for line in "${lines[@]}"; do
     local display
     display="$(echo "$line" | cut -f2)"
@@ -232,7 +232,7 @@ prezto:0.0	0	prezto:0.0	zsh	212x103
 EOF
 
   run "$CHAWAN_LIST" pane
-  [ "$status" -eq 0 ]
+  assert_success
   local id display
   id="$(echo "${lines[0]}" | cut -f1)"
   [ -z "$id" ]
@@ -250,7 +250,7 @@ prezto:0.1	0	prezto:0.1	vim	106x103
 EOF
 
   run "$CHAWAN_LIST" pane
-  [ "$status" -eq 0 ]
+  assert_success
   [ "${#lines[@]}" -eq 3 ]
   [[ "${lines[1]}" == prezto:0.0$'\t'* ]]
   [[ "${lines[2]}" == prezto:0.1$'\t'* ]]
@@ -264,7 +264,7 @@ my-project:0.1	0	my-project:0.1	zsh	159x40
 EOF
 
   run "$CHAWAN_LIST" pane
-  [ "$status" -eq 0 ]
+  assert_success
   # prezto:0.0 not active
   [[ "${lines[1]}" == prezto:0.0$'\t'" "* ]]
   # my-project:0.0 focused (active pane + active window + attached session)
@@ -281,7 +281,7 @@ my-project:1.1	0	my-project:1.1	vim	159x40
 EOF
 
   run "$CHAWAN_LIST" pane
-  [ "$status" -eq 0 ]
+  assert_success
   # my-project:0.0 focused pane (active pane + active window + attached session)
   [[ "${lines[1]}" == my-project:0.0$'\t'"*"* ]]
   # my-project:1.0 active pane in non-active window — no marker
@@ -296,7 +296,7 @@ prezto:0.0	0	prezto:0.0	zsh	212x103
 EOF
 
   run "$CHAWAN_LIST" pane
-  [ "$status" -eq 0 ]
+  assert_success
   local tab_count
   tab_count="$(echo "${lines[1]}" | awk -F'\t' '{print NF}')"
   [ "$tab_count" -eq 2 ]
@@ -308,10 +308,10 @@ prezto:0.0	0	my-pane	zsh	212x103
 EOF
 
   run "$CHAWAN_LIST" pane
-  [ "$status" -eq 0 ]
-  [[ "${lines[1]}" == *"my-pane"* ]]
-  [[ "${lines[1]}" == *"zsh"* ]]
-  [[ "${lines[1]}" == *"212x103"* ]]
+  assert_success
+  assert_line -n 1 --partial "my-pane"
+  assert_line -n 1 --partial "zsh"
+  assert_line -n 1 --partial "212x103"
 }
 
 @test "chawan-list pane: display portion contains no literal backslash-t" {
@@ -321,7 +321,7 @@ prezto:0.1	0	prezto:0.1	vim	106x103
 EOF
 
   run "$CHAWAN_LIST" pane
-  [ "$status" -eq 0 ]
+  assert_success
   for line in "${lines[@]}"; do
     local display
     display="$(echo "$line" | cut -f2)"
@@ -340,7 +340,7 @@ gamma	0	3	2000
 EOF
 
   run "$CHAWAN_LIST" session
-  [ "$status" -eq 0 ]
+  assert_success
   [[ "${lines[1]}" == beta$'\t'* ]]
   [[ "${lines[2]}" == gamma$'\t'* ]]
   [[ "${lines[3]}" == alpha$'\t'* ]]
@@ -355,7 +355,7 @@ gamma:0	0	zsh	1	2000
 EOF
 
   run "$CHAWAN_LIST" window
-  [ "$status" -eq 0 ]
+  assert_success
   [[ "${lines[1]}" == beta:0$'\t'* ]]
   [[ "${lines[2]}" == gamma:0$'\t'* ]]
   [[ "${lines[3]}" == alpha:0$'\t'* ]]
@@ -370,7 +370,7 @@ gamma:0.0	0	gamma:0.0	zsh	80x24	2000
 EOF
 
   run "$CHAWAN_LIST" pane
-  [ "$status" -eq 0 ]
+  assert_success
   [[ "${lines[1]}" == beta:0.0$'\t'* ]]
   [[ "${lines[2]}" == gamma:0.0$'\t'* ]]
   [[ "${lines[3]}" == alpha:0.0$'\t'* ]]
@@ -387,7 +387,7 @@ beta	0	1	3000
 EOF
 
   run "$CHAWAN_LIST" session
-  [ "$status" -eq 0 ]
+  assert_success
   [[ "${lines[1]}" == alpha$'\t'* ]]
   [[ "${lines[2]}" == beta$'\t'* ]]
   [[ "${lines[3]}" == gamma$'\t'* ]]
@@ -402,7 +402,7 @@ sess:2	0	vim	1	2000
 EOF
 
   run "$CHAWAN_LIST" window
-  [ "$status" -eq 0 ]
+  assert_success
   [[ "${lines[1]}" == sess:1$'\t'* ]]
   [[ "${lines[2]}" == sess:2$'\t'* ]]
   [[ "${lines[3]}" == sess:0$'\t'* ]]
@@ -417,7 +417,7 @@ sess:0.2	0	m-title	zsh	80x24	2000
 EOF
 
   run "$CHAWAN_LIST" pane
-  [ "$status" -eq 0 ]
+  assert_success
   [[ "${lines[1]}" == sess:0.1$'\t'* ]]
   [[ "${lines[2]}" == sess:0.2$'\t'* ]]
   [[ "${lines[3]}" == sess:0.0$'\t'* ]]
@@ -433,7 +433,7 @@ beta	0	1	3000
 EOF
 
   run "$CHAWAN_LIST" session
-  [ "$status" -eq 0 ]
+  assert_success
   [[ "${lines[1]}" == gamma$'\t'* ]]
   [[ "${lines[2]}" == alpha$'\t'* ]]
   [[ "${lines[3]}" == beta$'\t'* ]]
@@ -447,7 +447,7 @@ my project	0	2	1000
 EOF
 
   run "$CHAWAN_LIST" session
-  [ "$status" -eq 0 ]
+  assert_success
   local id
   id="$(echo "${lines[1]}" | cut -f1)"
   [ "$id" = "my project" ]
@@ -455,14 +455,14 @@ EOF
 
 @test "chawan-list unknown mode: returns empty output with exit 0" {
   run "$CHAWAN_LIST" unknown
-  [ "$status" -eq 0 ]
-  [ -z "$output" ]
+  assert_success
+  assert_output ""
 }
 
 @test "chawan-list no argument: returns empty output with exit 0" {
   run "$CHAWAN_LIST"
-  [ "$status" -eq 0 ]
-  [ -z "$output" ]
+  assert_success
+  assert_output ""
 }
 
 # --- distribute_widths ---
@@ -470,46 +470,46 @@ EOF
 @test "distribute_widths: all columns fit within equal share" {
   source "$CHAWAN_LIST"
   run distribute_widths 60 5 10 15
-  [ "$status" -eq 0 ]
-  [ "$output" = "5 10 15" ]
+  assert_success
+  assert_output "5 10 15"
 }
 
 @test "distribute_widths: some columns need truncation" {
   source "$CHAWAN_LIST"
   run distribute_widths 60 5 30 50
-  [ "$status" -eq 0 ]
+  assert_success
   # Pass1: share=20, col0(5<=20) fixed=5, remaining=55
   # Pass2: share=27, col1(30>27) unfixed, col2(50>27) unfixed
   # Final: col1=27, col2=27+1=28
-  [ "$output" = "5 27 28" ]
+  assert_output "5 27 28"
 }
 
 @test "distribute_widths: zero available returns all zeros" {
   source "$CHAWAN_LIST"
   run distribute_widths 0 10 20
-  [ "$status" -eq 0 ]
-  [ "$output" = "0 0" ]
+  assert_success
+  assert_output "0 0"
 }
 
 @test "distribute_widths: negative available returns all zeros" {
   source "$CHAWAN_LIST"
   run distribute_widths -5 10 20
-  [ "$status" -eq 0 ]
-  [ "$output" = "0 0" ]
+  assert_success
+  assert_output "0 0"
 }
 
 @test "distribute_widths: single column gets all available" {
   source "$CHAWAN_LIST"
   run distribute_widths 40 100
-  [ "$status" -eq 0 ]
-  [ "$output" = "40" ]
+  assert_success
+  assert_output "40"
 }
 
 @test "distribute_widths: single column fits within available" {
   source "$CHAWAN_LIST"
   run distribute_widths 40 10
-  [ "$status" -eq 0 ]
-  [ "$output" = "10" ]
+  assert_success
+  assert_output "10"
 }
 
 # --- CHAWAN_COLS dynamic width ---
@@ -521,9 +521,9 @@ short	0	2
 EOF
 
   run "$CHAWAN_LIST" session
-  [ "$status" -eq 0 ]
+  assert_success
   [[ "${lines[1]}" == short$'\t'* ]]
-  [[ "${lines[1]}" == *"2w"* ]]
+  assert_line -n 1 --partial "2w"
 }
 
 @test "chawan-list session: narrow CHAWAN_COLS truncates long name" {
@@ -533,7 +533,7 @@ very-long-session-name-here	0	2
 EOF
 
   run "$CHAWAN_LIST" session
-  [ "$status" -eq 0 ]
+  assert_success
   # Name should be truncated but still present as ID
   local id
   id="$(echo "${lines[1]}" | cut -f1)"

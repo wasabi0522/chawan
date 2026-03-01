@@ -26,23 +26,23 @@ teardown() {
 # --- session mode: new session ---
 
 @test "chawan-create: session mode creates new session and switches to it" {
-  echo "my-project" | "$CREATE_SCRIPT" session
+  output=$(echo "my-project" | "$CREATE_SCRIPT" session)
   status=$?
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "has-session -t =my-project" ]
-  [ "${lines[1]}" = "new-session -d -s my-project" ]
-  [ "${lines[2]}" = "switch-client -t =my-project" ]
+  assert_line -n 0 "has-session -t =my-project"
+  assert_line -n 1 "new-session -d -s my-project"
+  assert_line -n 2 "switch-client -t =my-project"
   [ "${#lines[@]}" -eq 3 ]
 }
 
 # --- session mode: empty input ---
 
 @test "chawan-create: session mode with empty input does nothing" {
-  echo "" | "$CREATE_SCRIPT" session
+  output=$(echo "" | "$CREATE_SCRIPT" session)
   status=$?
-  [ "$status" -eq 0 ]
+  assert_success
 
   # No tmux calls should have been made
   [ ! -s "$MOCK_TMUX_CALLS" ]
@@ -68,17 +68,17 @@ teardown() {
 
   # Should have called has-session but NOT new-session
   run grep "has-session" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 0 ]
+  assert_success
   run grep "new-session" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 1 ]
+  assert_failure
 }
 
 # --- session mode: forbidden characters ---
 
 @test "chawan-create: session mode with whitespace-only input does nothing" {
-  echo "   " | "$CREATE_SCRIPT" session
+  output=$(echo "   " | "$CREATE_SCRIPT" session)
   status=$?
-  [ "$status" -eq 0 ]
+  assert_success
 
   # No tmux calls should have been made
   [ ! -s "$MOCK_TMUX_CALLS" ]
@@ -93,7 +93,7 @@ teardown() {
 
   # Should NOT call has-session or new-session
   run grep "new-session" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 1 ]
+  assert_failure
 }
 
 @test "chawan-create: session mode rejects name containing colon" {
@@ -103,52 +103,52 @@ teardown() {
 
   # Should NOT call has-session or new-session
   run grep "new-session" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 1 ]
+  assert_failure
 }
 
 # --- session mode: slash in session name is allowed ---
 
 @test "chawan-create: session mode allows slash in name" {
-  echo "org/project" | "$CREATE_SCRIPT" session
+  output=$(echo "org/project" | "$CREATE_SCRIPT" session)
   status=$?
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "has-session -t =org/project" ]
-  [ "${lines[1]}" = "new-session -d -s org/project" ]
-  [ "${lines[2]}" = "switch-client -t =org/project" ]
+  assert_line -n 0 "has-session -t =org/project"
+  assert_line -n 1 "new-session -d -s org/project"
+  assert_line -n 2 "switch-client -t =org/project"
 }
 
 # --- window mode ---
 
 @test "chawan-create: window mode creates new window in target session" {
   run "$CREATE_SCRIPT" window "my-project:2"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "new-window -t =my-project:" ]
+  assert_line -n 0 "new-window -t =my-project:"
   [ "${#lines[@]}" -eq 1 ]
 }
 
 @test "chawan-create: window mode with slash in session name" {
   run "$CREATE_SCRIPT" window "org/project:1"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "new-window -t =org/project:" ]
+  assert_line -n 0 "new-window -t =org/project:"
 }
 
 # --- window mode: empty target ---
 
 @test "chawan-create: window mode with empty target exits 0" {
   run "$CREATE_SCRIPT" window ""
-  [ "$status" -eq 0 ]
+  assert_success
   [ ! -s "$MOCK_TMUX_CALLS" ]
 }
 
 @test "chawan-create: window mode with missing target exits 0" {
   run "$CREATE_SCRIPT" window
-  [ "$status" -eq 0 ]
+  assert_success
   [ ! -s "$MOCK_TMUX_CALLS" ]
 }
 
@@ -156,32 +156,32 @@ teardown() {
 
 @test "chawan-create: pane mode splits window horizontally at target" {
   run "$CREATE_SCRIPT" pane "my-project:2.1"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "split-window -h -t =my-project:2.1" ]
+  assert_line -n 0 "split-window -h -t =my-project:2.1"
   [ "${#lines[@]}" -eq 1 ]
 }
 
 @test "chawan-create: pane mode with slash in session name" {
   run "$CREATE_SCRIPT" pane "org/project:0.2"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "split-window -h -t =org/project:0.2" ]
+  assert_line -n 0 "split-window -h -t =org/project:0.2"
 }
 
 # --- pane mode: empty target ---
 
 @test "chawan-create: pane mode with empty target exits 0" {
   run "$CREATE_SCRIPT" pane ""
-  [ "$status" -eq 0 ]
+  assert_success
   [ ! -s "$MOCK_TMUX_CALLS" ]
 }
 
 @test "chawan-create: pane mode with missing target exits 0" {
   run "$CREATE_SCRIPT" pane
-  [ "$status" -eq 0 ]
+  assert_success
   [ ! -s "$MOCK_TMUX_CALLS" ]
 }
 
@@ -202,7 +202,7 @@ teardown() {
 
   # Should have called new-window but no further commands
   run grep "new-window" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "chawan-create: pane mode shows error when split-window fails" {
@@ -220,7 +220,7 @@ teardown() {
 
   # Should have called split-window but no further commands
   run grep "split-window" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "chawan-create: session mode rejects name with control characters" {
@@ -229,7 +229,7 @@ teardown() {
   [ "$exit_status" -eq 1 ]
 
   run grep "new-session" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 1 ]
+  assert_failure
 }
 
 @test "chawan-create: session mode shows error when new-session fails" {
@@ -252,7 +252,7 @@ teardown() {
 
   # Should have called has-session and new-session, but NOT switch-client
   run grep "new-session" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 0 ]
+  assert_success
   run grep "switch-client" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 1 ]
+  assert_failure
 }

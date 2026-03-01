@@ -21,32 +21,32 @@ teardown() {
 
 @test "normalize_mode: session is default for empty input" {
   run normalize_mode ""
-  [ "$status" -eq 0 ]
-  [ "$output" = "session" ]
+  assert_success
+  assert_output "session"
 }
 
 @test "normalize_mode: session is preserved" {
   run normalize_mode "session"
-  [ "$status" -eq 0 ]
-  [ "$output" = "session" ]
+  assert_success
+  assert_output "session"
 }
 
 @test "normalize_mode: window is preserved" {
   run normalize_mode "window"
-  [ "$status" -eq 0 ]
-  [ "$output" = "window" ]
+  assert_success
+  assert_output "window"
 }
 
 @test "normalize_mode: pane is preserved" {
   run normalize_mode "pane"
-  [ "$status" -eq 0 ]
-  [ "$output" = "pane" ]
+  assert_success
+  assert_output "pane"
 }
 
 @test "normalize_mode: invalid input defaults to session" {
   run normalize_mode "invalid"
-  [ "$status" -eq 0 ]
-  [ "$output" = "session" ]
+  assert_success
+  assert_output "session"
 }
 
 # --- find_current_pos ---
@@ -62,8 +62,8 @@ teardown() {
   local list
   list=$(printf '\theader\nalpha\tdisplay1\nmysess\tdisplay2\nbeta\tdisplay3')
   run find_current_pos "session" "$list"
-  [ "$status" -eq 0 ]
-  [ "$output" = "2" ]
+  assert_success
+  assert_output "2"
 }
 
 @test "find_current_pos: session mode returns 1 when not found" {
@@ -77,8 +77,8 @@ teardown() {
   local list
   list=$(printf '\theader\nalpha\tdisplay1\nbeta\tdisplay2')
   run find_current_pos "session" "$list"
-  [ "$status" -eq 0 ]
-  [ "$output" = "1" ]
+  assert_success
+  assert_output "1"
 }
 
 @test "find_current_pos: window mode finds current window at line 2" {
@@ -92,8 +92,8 @@ teardown() {
   local list
   list=$(printf '\theader\nmysess:0\tdisplay1\nmysess:1\tdisplay2\nmysess:2\tdisplay3')
   run find_current_pos "window" "$list"
-  [ "$status" -eq 0 ]
-  [ "$output" = "2" ]
+  assert_success
+  assert_output "2"
 }
 
 @test "find_current_pos: pane mode finds current pane at line 3" {
@@ -107,8 +107,8 @@ teardown() {
   local list
   list=$(printf '\theader\nmysess:0.0\tdisplay1\nmysess:0.1\tdisplay2\nmysess:0.2\tdisplay3')
   run find_current_pos "pane" "$list"
-  [ "$status" -eq 0 ]
-  [ "$output" = "3" ]
+  assert_success
+  assert_output "3"
 }
 
 # --- compute_header_width ---
@@ -120,9 +120,9 @@ teardown() {
   export -f tmux
 
   run compute_header_width "80%" "on"
-  [ "$status" -eq 0 ]
+  assert_success
   # 200 * 80/100 = 160 cols, 160 * 50/100 - 10 = 70
-  [ "$output" = "70" ]
+  assert_output "70"
 }
 
 @test "compute_header_width: absolute popup without preview" {
@@ -132,9 +132,9 @@ teardown() {
   export -f tmux
 
   run compute_header_width "120" "off"
-  [ "$status" -eq 0 ]
+  assert_success
   # 120 - 10 = 110
-  [ "$output" = "110" ]
+  assert_output "110"
 }
 
 @test "compute_header_width: non-numeric popup defaults to 80" {
@@ -144,9 +144,9 @@ teardown() {
   export -f tmux
 
   run compute_header_width "abc" "off"
-  [ "$status" -eq 0 ]
+  assert_success
   # fallback 80 - 10 = 70
-  [ "$output" = "70" ]
+  assert_output "70"
 }
 
 # --- build_headers ---
@@ -172,14 +172,14 @@ teardown() {
 
 @test "build_footer: uses provided keybindings" {
   run build_footer "ctrl-n" "ctrl-x" "ctrl-e"
-  [ "$status" -eq 0 ]
-  [ "$output" = "enter:switch  ctrl-n:new  ctrl-x:del  ctrl-e:rename" ]
+  assert_success
+  assert_output "enter:switch  ctrl-n:new  ctrl-x:del  ctrl-e:rename"
 }
 
 @test "build_footer: uses defaults when no args" {
   run build_footer
-  [ "$status" -eq 0 ]
-  [ "$output" = "enter:switch  ctrl-o:new  ctrl-d:del  ctrl-r:rename" ]
+  assert_success
+  assert_output "enter:switch  ctrl-o:new  ctrl-d:del  ctrl-r:rename"
 }
 
 # --- main (with fzf mock) ---
@@ -219,10 +219,10 @@ _mock_fzf() {
   _mock_fzf
 
   run main
-  [ "$status" -eq 0 ]
+  assert_success
 
   run grep "> " "$FZF_ARGS_FILE"
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "main: window mode passes correct prompt to fzf" {
@@ -249,10 +249,10 @@ _mock_fzf() {
   _mock_fzf
 
   run main
-  [ "$status" -eq 0 ]
+  assert_success
 
   run grep "> " "$FZF_ARGS_FILE"
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "main: preview window includes follow for scroll-to-bottom" {
@@ -260,10 +260,10 @@ _mock_fzf() {
   _mock_fzf
 
   run main
-  [ "$status" -eq 0 ]
+  assert_success
 
   run grep "follow" "$FZF_ARGS_FILE"
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "main: preview disabled omits --preview flag" {
@@ -291,12 +291,12 @@ _mock_fzf() {
   _mock_fzf
 
   run main
-  [ "$status" -eq 0 ]
+  assert_success
 
   run grep "^--preview$" "$FZF_ARGS_FILE"
-  [ "$status" -eq 1 ]
+  assert_failure
   run grep "^--preview-window$" "$FZF_ARGS_FILE"
-  [ "$status" -eq 1 ]
+  assert_failure
 }
 
 @test "main: custom keybindings appear in footer" {
@@ -325,14 +325,14 @@ _mock_fzf() {
   _mock_fzf
 
   run main
-  [ "$status" -eq 0 ]
+  assert_success
 
   run grep "ctrl-n:new" "$FZF_ARGS_FILE"
-  [ "$status" -eq 0 ]
+  assert_success
   run grep "ctrl-x:del" "$FZF_ARGS_FILE"
-  [ "$status" -eq 0 ]
+  assert_success
   run grep "ctrl-e:rename" "$FZF_ARGS_FILE"
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "main: pane mode passes correct prompt to fzf" {
@@ -359,10 +359,10 @@ _mock_fzf() {
   _mock_fzf
 
   run main
-  [ "$status" -eq 0 ]
+  assert_success
 
   run grep "> " "$FZF_ARGS_FILE"
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "main: absolute popup width (non-percentage) is used directly" {
@@ -390,10 +390,10 @@ _mock_fzf() {
   _mock_fzf
 
   run main
-  [ "$status" -eq 0 ]
+  assert_success
 
   run grep "center,120," "$FZF_ARGS_FILE"
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "find_current_pos: returns 1 for empty list" {
@@ -405,8 +405,8 @@ _mock_fzf() {
   export -f tmux
 
   run find_current_pos "session" ""
-  [ "$status" -eq 0 ]
-  [ "$output" = "1" ]
+  assert_success
+  assert_output "1"
 }
 
 @test "find_current_pos: backslash in session name is matched literally" {
@@ -420,8 +420,8 @@ _mock_fzf() {
   local list
   list=$(printf '\theader\nalpha\tdisplay1\nmy\\nproject\tdisplay2\nbeta\tdisplay3')
   run find_current_pos "session" "$list"
-  [ "$status" -eq 0 ]
-  [ "$output" = "2" ]
+  assert_success
+  assert_output "2"
 }
 
 @test "find_current_pos: dot in pane ID is matched literally not as regex wildcard" {
@@ -436,8 +436,8 @@ _mock_fzf() {
   # "mysess:0x2" should NOT match target "mysess:0.2"
   list=$(printf '\theader\nmysess:0x2\tdisplay1\nmysess:0.2\tdisplay2')
   run find_current_pos "pane" "$list"
-  [ "$status" -eq 0 ]
-  [ "$output" = "2" ]
+  assert_success
+  assert_output "2"
 }
 
 @test "main: current session position is passed to fzf" {
@@ -461,10 +461,10 @@ _mock_fzf() {
   _mock_fzf
 
   run main
-  [ "$status" -eq 0 ]
+  assert_success
 
   run grep "result:pos(2)" "$FZF_ARGS_FILE"
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "main: fzf selection triggers switch action" {
@@ -478,10 +478,10 @@ _mock_fzf() {
   export -f fzf
 
   run main
-  [ "$status" -eq 0 ]
+  assert_success
 
   run grep "switch-client -t =default" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "main: rejects invalid bind-delete key" {
@@ -500,11 +500,11 @@ _mock_fzf() {
   export -f tmux
 
   run main
-  [ "$status" -eq 1 ]
+  assert_failure
 
   run cat "$MOCK_TMUX_CALLS"
-  [[ "$output" == *"display-message"* ]]
-  [[ "$output" == *"invalid key binding"* ]]
+  assert_output --partial "display-message"
+  assert_output --partial "invalid key binding"
 }
 
 @test "main: argument 'window' overrides default session mode" {
@@ -525,11 +525,11 @@ _mock_fzf() {
   _mock_fzf
 
   run main "window"
-  [ "$status" -eq 0 ]
+  assert_success
 
   # Verify list-windows was called (not list-sessions)
   run grep "list-windows" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "main: argument 'pane' overrides default session mode" {
@@ -550,10 +550,10 @@ _mock_fzf() {
   _mock_fzf
 
   run main "pane"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run grep "list-panes" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "main: invalid argument is ignored, defaults to session" {
@@ -561,10 +561,10 @@ _mock_fzf() {
   _mock_fzf
 
   run main "invalid"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run grep "list-sessions" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "main: sort_mode is read and exported" {
@@ -592,10 +592,10 @@ _mock_fzf() {
   _mock_fzf
 
   run main
-  [ "$status" -eq 0 ]
+  assert_success
 
   run grep "show-option -gqv @chawan-sort" "$MOCK_TMUX_CALLS"
-  [ "$status" -eq 0 ]
+  assert_success
 }
 
 @test "compute_header_width: percentage popup with preview off uses full width" {
@@ -605,9 +605,9 @@ _mock_fzf() {
   export -f tmux
 
   run compute_header_width "80%" "off"
-  [ "$status" -eq 0 ]
+  assert_success
   # 200 * 80/100 = 160, full width: 160 - 10 = 150
-  [ "$output" = "150" ]
+  assert_output "150"
 }
 
 @test "main: fzf unexpected exit code is propagated" {

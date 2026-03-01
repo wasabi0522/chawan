@@ -27,14 +27,14 @@ teardown() {
 
 @test "chawan-action: empty target exits 0 immediately" {
   run "$PROJECT_ROOT/scripts/chawan-action.sh" switch session ""
-  [ "$status" -eq 0 ]
+  assert_success
   # No tmux calls should have been made
   [ ! -s "$MOCK_TMUX_CALLS" ]
 }
 
 @test "chawan-action: missing target exits 0 immediately" {
   run "$PROJECT_ROOT/scripts/chawan-action.sh" switch session
-  [ "$status" -eq 0 ]
+  assert_success
   [ ! -s "$MOCK_TMUX_CALLS" ]
 }
 
@@ -42,10 +42,10 @@ teardown() {
 
 @test "chawan-action: switch session calls switch-client" {
   run "$PROJECT_ROOT/scripts/chawan-action.sh" switch session "my-project"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "switch-client -t =my-project" ]
+  assert_line -n 0 "switch-client -t =my-project"
   [ "${#lines[@]}" -eq 1 ]
 }
 
@@ -53,52 +53,52 @@ teardown() {
 
 @test "chawan-action: switch window calls switch-client and select-window" {
   run "$PROJECT_ROOT/scripts/chawan-action.sh" switch window "my-project:2"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "switch-client -t =my-project" ]
-  [ "${lines[1]}" = "select-window -t =my-project:2" ]
+  assert_line -n 0 "switch-client -t =my-project"
+  assert_line -n 1 "select-window -t =my-project:2"
   [ "${#lines[@]}" -eq 2 ]
 }
 
 @test "chawan-action: switch window with slash in session name" {
   run "$PROJECT_ROOT/scripts/chawan-action.sh" switch window "org/project:1"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "switch-client -t =org/project" ]
-  [ "${lines[1]}" = "select-window -t =org/project:1" ]
+  assert_line -n 0 "switch-client -t =org/project"
+  assert_line -n 1 "select-window -t =org/project:1"
 }
 
 # --- switch pane ---
 
 @test "chawan-action: switch pane calls switch-client and select-pane" {
   run "$PROJECT_ROOT/scripts/chawan-action.sh" switch pane "my-project:2.1"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "switch-client -t =my-project" ]
-  [ "${lines[1]}" = "select-pane -t =my-project:2.1" ]
+  assert_line -n 0 "switch-client -t =my-project"
+  assert_line -n 1 "select-pane -t =my-project:2.1"
   [ "${#lines[@]}" -eq 2 ]
 }
 
 @test "chawan-action: switch pane with slash in session name" {
   run "$PROJECT_ROOT/scripts/chawan-action.sh" switch pane "org/project:0.2"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "switch-client -t =org/project" ]
-  [ "${lines[1]}" = "select-pane -t =org/project:0.2" ]
+  assert_line -n 0 "switch-client -t =org/project"
+  assert_line -n 1 "select-pane -t =org/project:0.2"
   [ "${#lines[@]}" -eq 2 ]
 }
 
 @test "chawan-action: switch pane with dot in session name" {
   run "$PROJECT_ROOT/scripts/chawan-action.sh" switch pane "my.dotfiles:0.1"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "switch-client -t =my.dotfiles" ]
-  [ "${lines[1]}" = "select-pane -t =my.dotfiles:0.1" ]
+  assert_line -n 0 "switch-client -t =my.dotfiles"
+  assert_line -n 1 "select-pane -t =my.dotfiles:0.1"
   [ "${#lines[@]}" -eq 2 ]
 }
 
@@ -109,13 +109,13 @@ teardown() {
   export MOCK_DISPLAY_MESSAGE
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete session "my-project"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
   # First call: display-message to get current session
-  [ "${lines[0]}" = "display-message -p #S" ]
+  assert_line -n 0 "display-message -p #S"
   # Second call: kill-session
-  [ "${lines[1]}" = "kill-session -t =my-project" ]
+  assert_line -n 1 "kill-session -t =my-project"
 }
 
 @test "chawan-action: delete session with hyphen-prefixed name" {
@@ -123,11 +123,11 @@ teardown() {
   export MOCK_DISPLAY_MESSAGE
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete session "-my-session"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "display-message -p #S" ]
-  [ "${lines[1]}" = "kill-session -t =-my-session" ]
+  assert_line -n 0 "display-message -p #S"
+  assert_line -n 1 "kill-session -t =-my-session"
 }
 
 # --- delete current session: switch-client then kill ---
@@ -137,12 +137,12 @@ teardown() {
   export MOCK_DISPLAY_MESSAGE
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete session "my-project"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "display-message -p #S" ]
-  [ "${lines[1]}" = "switch-client -l" ]
-  [ "${lines[2]}" = "kill-session -t =my-project" ]
+  assert_line -n 0 "display-message -p #S"
+  assert_line -n 1 "switch-client -l"
+  assert_line -n 2 "kill-session -t =my-project"
 }
 
 @test "chawan-action: delete current session falls back to switch-client -n" {
@@ -165,13 +165,13 @@ teardown() {
   export -f tmux
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete session "my-project"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "display-message -p #S" ]
-  [ "${lines[1]}" = "switch-client -l" ]
-  [ "${lines[2]}" = "switch-client -n" ]
-  [ "${lines[3]}" = "kill-session -t =my-project" ]
+  assert_line -n 0 "display-message -p #S"
+  assert_line -n 1 "switch-client -l"
+  assert_line -n 2 "switch-client -n"
+  assert_line -n 3 "kill-session -t =my-project"
 }
 
 # --- delete last session ---
@@ -194,13 +194,13 @@ teardown() {
   export -f tmux
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete session "my-project"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "display-message -p #S" ]
-  [ "${lines[1]}" = "switch-client -l" ]
-  [ "${lines[2]}" = "switch-client -n" ]
-  [ "${lines[3]}" = "kill-session -t =my-project" ]
+  assert_line -n 0 "display-message -p #S"
+  assert_line -n 1 "switch-client -l"
+  assert_line -n 2 "switch-client -n"
+  assert_line -n 3 "kill-session -t =my-project"
 }
 
 # --- delete window ---
@@ -210,11 +210,11 @@ teardown() {
   export MOCK_DISPLAY_MESSAGE
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete window "my-project:2"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "display-message -p #S" ]
-  [ "${lines[1]}" = "kill-window -t =my-project:2" ]
+  assert_line -n 0 "display-message -p #S"
+  assert_line -n 1 "kill-window -t =my-project:2"
   [ "${#lines[@]}" -eq 2 ]
 }
 
@@ -236,12 +236,12 @@ teardown() {
   export -f tmux
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete window "my-project:2"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "display-message -p #S" ]
-  [ "${lines[1]}" = "list-windows -t =my-project -F ." ]
-  [ "${lines[2]}" = "kill-window -t =my-project:2" ]
+  assert_line -n 0 "display-message -p #S"
+  assert_line -n 1 "list-windows -t =my-project -F ."
+  assert_line -n 2 "kill-window -t =my-project:2"
   [ "${#lines[@]}" -eq 3 ]
 }
 
@@ -265,13 +265,13 @@ teardown() {
   export -f tmux
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete window "my-project:0"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "display-message -p #S" ]
-  [ "${lines[1]}" = "list-windows -t =my-project -F ." ]
-  [ "${lines[2]}" = "switch-client -l" ]
-  [ "${lines[3]}" = "kill-window -t =my-project:0" ]
+  assert_line -n 0 "display-message -p #S"
+  assert_line -n 1 "list-windows -t =my-project -F ."
+  assert_line -n 2 "switch-client -l"
+  assert_line -n 3 "kill-window -t =my-project:0"
   [ "${#lines[@]}" -eq 4 ]
 }
 
@@ -298,14 +298,14 @@ teardown() {
   export -f tmux
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete window "my-project:0"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "display-message -p #S" ]
-  [ "${lines[1]}" = "list-windows -t =my-project -F ." ]
-  [ "${lines[2]}" = "switch-client -l" ]
-  [ "${lines[3]}" = "switch-client -n" ]
-  [ "${lines[4]}" = "kill-window -t =my-project:0" ]
+  assert_line -n 0 "display-message -p #S"
+  assert_line -n 1 "list-windows -t =my-project -F ."
+  assert_line -n 2 "switch-client -l"
+  assert_line -n 3 "switch-client -n"
+  assert_line -n 4 "kill-window -t =my-project:0"
   [ "${#lines[@]}" -eq 5 ]
 }
 
@@ -316,11 +316,11 @@ teardown() {
   export MOCK_DISPLAY_MESSAGE
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my-project:2.1"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "display-message -p #S" ]
-  [ "${lines[1]}" = "kill-pane -t =my-project:2.1" ]
+  assert_line -n 0 "display-message -p #S"
+  assert_line -n 1 "kill-pane -t =my-project:2.1"
   [ "${#lines[@]}" -eq 2 ]
 }
 
@@ -342,12 +342,12 @@ teardown() {
   export -f tmux
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my-project:2.1"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "display-message -p #S" ]
-  [ "${lines[1]}" = "list-panes -t =my-project:2 -F ." ]
-  [ "${lines[2]}" = "kill-pane -t =my-project:2.1" ]
+  assert_line -n 0 "display-message -p #S"
+  assert_line -n 1 "list-panes -t =my-project:2 -F ."
+  assert_line -n 2 "kill-pane -t =my-project:2.1"
   [ "${#lines[@]}" -eq 3 ]
 }
 
@@ -372,13 +372,13 @@ teardown() {
   export -f tmux
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my-project:2.0"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "display-message -p #S" ]
-  [ "${lines[1]}" = "list-panes -t =my-project:2 -F ." ]
-  [ "${lines[2]}" = "list-windows -t =my-project -F ." ]
-  [ "${lines[3]}" = "kill-pane -t =my-project:2.0" ]
+  assert_line -n 0 "display-message -p #S"
+  assert_line -n 1 "list-panes -t =my-project:2 -F ."
+  assert_line -n 2 "list-windows -t =my-project -F ."
+  assert_line -n 3 "kill-pane -t =my-project:2.0"
   [ "${#lines[@]}" -eq 4 ]
 }
 
@@ -405,14 +405,14 @@ teardown() {
   export -f tmux
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my-project:2.0"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "display-message -p #S" ]
-  [ "${lines[1]}" = "list-panes -t =my-project:2 -F ." ]
-  [ "${lines[2]}" = "list-windows -t =my-project -F ." ]
-  [ "${lines[3]}" = "switch-client -l" ]
-  [ "${lines[4]}" = "kill-pane -t =my-project:2.0" ]
+  assert_line -n 0 "display-message -p #S"
+  assert_line -n 1 "list-panes -t =my-project:2 -F ."
+  assert_line -n 2 "list-windows -t =my-project -F ."
+  assert_line -n 3 "switch-client -l"
+  assert_line -n 4 "kill-pane -t =my-project:2.0"
   [ "${#lines[@]}" -eq 5 ]
 }
 
@@ -442,15 +442,15 @@ teardown() {
   export -f tmux
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my-project:2.0"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "display-message -p #S" ]
-  [ "${lines[1]}" = "list-panes -t =my-project:2 -F ." ]
-  [ "${lines[2]}" = "list-windows -t =my-project -F ." ]
-  [ "${lines[3]}" = "switch-client -l" ]
-  [ "${lines[4]}" = "switch-client -n" ]
-  [ "${lines[5]}" = "kill-pane -t =my-project:2.0" ]
+  assert_line -n 0 "display-message -p #S"
+  assert_line -n 1 "list-panes -t =my-project:2 -F ."
+  assert_line -n 2 "list-windows -t =my-project -F ."
+  assert_line -n 3 "switch-client -l"
+  assert_line -n 4 "switch-client -n"
+  assert_line -n 5 "kill-pane -t =my-project:2.0"
   [ "${#lines[@]}" -eq 6 ]
 }
 
@@ -475,15 +475,15 @@ teardown() {
   export -f tmux
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my.dotfiles:0.1"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [ "${lines[0]}" = "display-message -p #S" ]
+  assert_line -n 0 "display-message -p #S"
   # ${target%.*} should correctly extract "my.dotfiles:0" (not "my")
-  [ "${lines[1]}" = "list-panes -t =my.dotfiles:0 -F ." ]
-  [ "${lines[2]}" = "list-windows -t =my.dotfiles -F ." ]
-  [ "${lines[3]}" = "switch-client -l" ]
-  [ "${lines[4]}" = "kill-pane -t =my.dotfiles:0.1" ]
+  assert_line -n 1 "list-panes -t =my.dotfiles:0 -F ."
+  assert_line -n 2 "list-windows -t =my.dotfiles -F ."
+  assert_line -n 3 "switch-client -l"
+  assert_line -n 4 "kill-pane -t =my.dotfiles:0.1"
   [ "${#lines[@]}" -eq 5 ]
 }
 
@@ -510,10 +510,10 @@ teardown() {
   export -f tmux
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete session "no-such"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [[ "$output" == *"display-message chawan:"* ]]
+  assert_output --partial "display-message chawan:"
 }
 
 @test "chawan-action: delete window shows error when kill-window fails" {
@@ -529,10 +529,10 @@ teardown() {
   export -f tmux
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete window "no-such:0"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [[ "$output" == *"display-message chawan:"* ]]
+  assert_output --partial "display-message chawan:"
 }
 
 @test "chawan-action: delete pane shows error when kill-pane fails" {
@@ -548,15 +548,15 @@ teardown() {
   export -f tmux
 
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete pane "my-project:0.1"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run cat "$MOCK_TMUX_CALLS"
-  [[ "$output" == *"display-message chawan:"* ]]
+  assert_output --partial "display-message chawan:"
 }
 
 @test "chawan-action: unknown action does nothing" {
   run "$PROJECT_ROOT/scripts/chawan-action.sh" unknown session "my-project"
-  [ "$status" -eq 0 ]
+  assert_success
   [ ! -s "$MOCK_TMUX_CALLS" ]
 }
 
@@ -564,6 +564,6 @@ teardown() {
 
 @test "chawan-action: delete with empty target exits 0 immediately" {
   run "$PROJECT_ROOT/scripts/chawan-action.sh" delete session ""
-  [ "$status" -eq 0 ]
+  assert_success
   [ ! -s "$MOCK_TMUX_CALLS" ]
 }
